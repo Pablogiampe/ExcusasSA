@@ -8,12 +8,17 @@ import ar.edu.davinci.excusas.model.mail.EmailSenderImpl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Positive;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/empleados")
+@RequestMapping("/empleados")
 public class EmpleadoController {
 
     private final List<Empleado> empleados = new ArrayList<>();
@@ -37,17 +42,17 @@ public class EmpleadoController {
         Optional<Empleado> empleado = empleados.stream()
                 .filter(e -> e.getLegajo() == legajo)
                 .findFirst();
-        
+
         return empleado.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Empleado> crearEmpleado(@RequestBody EmpleadoRequest request) {
+    public ResponseEntity<Empleado> crearEmpleado(@Valid @RequestBody EmpleadoRequest request) {
         // Verificar que no exista un empleado con el mismo legajo
         boolean existeLegajo = empleados.stream()
                 .anyMatch(e -> e.getLegajo() == request.getLegajo());
-        
+
         if (existeLegajo) {
             return ResponseEntity.badRequest().build();
         }
@@ -57,38 +62,36 @@ public class EmpleadoController {
                 request.getEmail(),
                 request.getLegajo()
         );
-        
+
         empleados.add(nuevoEmpleado);
         return ResponseEntity.ok(nuevoEmpleado);
     }
 
-    @PostMapping("/{legajo}/excusas")
-    public ResponseEntity<ExcusaResponse> generarExcusa(
+    @PostMapping("/{legajo}/excusas/{motivo}")
+    public ResponseEntity<Excusa> generarExcusa(
             @PathVariable int legajo,
-            @RequestBody ExcusaRequest request) {
-        
+            @PathVariable String motivo) {
+
         Optional<Empleado> empleadoOpt = empleados.stream()
                 .filter(e -> e.getLegajo() == legajo)
                 .findFirst();
-        
+
         if (empleadoOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
+        // Validar que el motivo no esté vacío
+        if (motivo == null || motivo.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
         try {
             Empleado empleado = empleadoOpt.get();
-            MotivoExcusa motivo = MotivoExcusa.valueOf(request.getMotivo().toUpperCase());
-            
-            Excusa excusa = empleado.generarYEnviarExcusa(motivo, lineaEncargados);
-            
-            ExcusaResponse response = new ExcusaResponse(
-                    excusa.getClass().getSimpleName(),
-                    excusa.getMotivo().toString(),
-                    empleado.getNombre(),
-                    empleado.getLegajo()
-            );
-            
-            return ResponseEntity.ok(response);
+            MotivoExcusa motivoEnum = MotivoExcusa.valueOf(motivo.toUpperCase());
+
+            Excusa excusa = empleado.generarYEnviarExcusa(motivoEnum, lineaEncargados);
+
+            return ResponseEntity.ok(excusa);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
@@ -97,7 +100,7 @@ public class EmpleadoController {
     @DeleteMapping("/{legajo}")
     public ResponseEntity<Void> eliminarEmpleado(@PathVariable int legajo) {
         boolean eliminado = empleados.removeIf(e -> e.getLegajo() == legajo);
-        
+
         if (eliminado) {
             return ResponseEntity.ok().build();
         } else {
@@ -107,47 +110,25 @@ public class EmpleadoController {
 
     // DTOs
     public static class EmpleadoRequest {
+        @NotBlank(message = "El nombre no puede estar vacío")
         private String nombre;
+
+        @NotBlank(message = "El email no puede estar vacío")
+        @Email(message = "El email debe tener un formato válido")
         private String email;
+
+        @Positive(message = "El legajo debe ser un número positivo")
         private int legajo;
 
         public EmpleadoRequest() {}
 
         public String getNombre() { return nombre; }
         public void setNombre(String nombre) { this.nombre = nombre; }
-        
+
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
-        
+
         public int getLegajo() { return legajo; }
         public void setLegajo(int legajo) { this.legajo = legajo; }
-    }
-
-    public static class ExcusaRequest {
-        private String motivo;
-
-        public ExcusaRequest() {}
-
-        public String getMotivo() { return motivo; }
-        public void setMotivo(String motivo) { this.motivo = motivo; }
-    }
-
-    public static class ExcusaResponse {
-        private String tipoExcusa;
-        private String motivo;
-        private String nombreEmpleado;
-        private int legajoEmpleado;
-
-        public ExcusaResponse(String tipoExcusa, String motivo, String nombreEmpleado, int legajoEmpleado) {
-            this.tipoExcusa = tipoExcusa;
-            this.motivo = motivo;
-            this.nombreEmpleado = nombreEmpleado;
-            this.legajoEmpleado = legajoEmpleado;
-        }
-
-        public String getTipoExcusa() { return tipoExcusa; }
-        public String getMotivo() { return motivo; }
-        public String getNombreEmpleado() { return nombreEmpleado; }
-        public int getLegajoEmpleado() { return legajoEmpleado; }
     }
 }

@@ -101,77 +101,59 @@ public class EmpleadoControllerIntegrationTest {
 
     @Test
     public void testGenerarExcusaTrivial_DebeRetornarExcusaConFormatoEsperado() throws Exception {
-        // Given
-        EmpleadoController.ExcusaRequest excusaRequest = new EmpleadoController.ExcusaRequest();
-        excusaRequest.setMotivo("QUEDARSE_DORMIDO");
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<EmpleadoController.ExcusaRequest> request = new HttpEntity<>(excusaRequest, headers);
-
         // When
         ResponseEntity<String> response = restTemplate.postForEntity(
-                getBaseUrl() + "/2001/excusas", request, String.class);
+                getBaseUrl() + "/2001/excusas/QUEDARSE_DORMIDO", null, String.class);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
 
-        // Verificar formato de respuesta de excusa
-        assertTrue(response.getBody().contains("\"tipoExcusa\":\"ExcusaTrivial\""));
+        // Verificar formato de respuesta de excusa directa (no ExcusaResponse)
         assertTrue(response.getBody().contains("\"motivo\":\"QUEDARSE_DORMIDO\""));
-        assertTrue(response.getBody().contains("\"nombreEmpleado\":\"Juan Pérez\""));
-        assertTrue(response.getBody().contains("\"legajoEmpleado\":2001"));
+        assertTrue(response.getBody().contains("\"empleado\""));
+
+        // Verificar que contiene información del empleado dentro del objeto excusa
+        assertTrue(response.getBody().contains("\"nombre\":\"Juan Pérez\""));
+        assertTrue(response.getBody().contains("\"legajo\":2001"));
     }
 
     @Test
     public void testGenerarExcusaModerada_DebeRetornarExcusaConFormatoEsperado() throws Exception {
-        // Given
-        EmpleadoController.ExcusaRequest excusaRequest = new EmpleadoController.ExcusaRequest();
-        excusaRequest.setMotivo("PERDIDA_SUMINISTRO");
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<EmpleadoController.ExcusaRequest> request = new HttpEntity<>(excusaRequest, headers);
-
         // When
         ResponseEntity<String> response = restTemplate.postForEntity(
-                getBaseUrl() + "/2002/excusas", request, String.class);
+                getBaseUrl() + "/2002/excusas/PERDIDA_SUMINISTRO", null, String.class);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
 
-        // Verificar formato de respuesta de excusa moderada
-        assertTrue(response.getBody().contains("\"tipoExcusa\":\"ExcusaPerdidaSuministro\""));
+        // Verificar formato de respuesta de excusa directa
         assertTrue(response.getBody().contains("\"motivo\":\"PERDIDA_SUMINISTRO\""));
-        assertTrue(response.getBody().contains("\"nombreEmpleado\":\"María García\""));
-        assertTrue(response.getBody().contains("\"legajoEmpleado\":2002"));
+        assertTrue(response.getBody().contains("\"empleado\""));
+
+        // Verificar que contiene información del empleado
+        assertTrue(response.getBody().contains("\"nombre\":\"María García\""));
+        assertTrue(response.getBody().contains("\"legajo\":2002"));
     }
 
     @Test
     public void testGenerarExcusaCompleja_DebeRetornarExcusaConFormatoEsperado() throws Exception {
-        // Given
-        EmpleadoController.ExcusaRequest excusaRequest = new EmpleadoController.ExcusaRequest();
-        excusaRequest.setMotivo("IRRELEVANTE");
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<EmpleadoController.ExcusaRequest> request = new HttpEntity<>(excusaRequest, headers);
-
         // When
         ResponseEntity<String> response = restTemplate.postForEntity(
-                getBaseUrl() + "/2003/excusas", request, String.class);
+                getBaseUrl() + "/2003/excusas/IRRELEVANTE", null, String.class);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
 
-        // Verificar formato de respuesta de excusa compleja
-        assertTrue(response.getBody().contains("\"tipoExcusa\":\"ExcusaCompleja\""));
+        // Verificar formato de respuesta de excusa directa
         assertTrue(response.getBody().contains("\"motivo\":\"IRRELEVANTE\""));
-        assertTrue(response.getBody().contains("\"nombreEmpleado\":\"Carlos López\""));
-        assertTrue(response.getBody().contains("\"legajoEmpleado\":2003"));
+        assertTrue(response.getBody().contains("\"empleado\""));
+
+        // Verificar que contiene información del empleado
+        assertTrue(response.getBody().contains("\"nombre\":\"Carlos López\""));
+        assertTrue(response.getBody().contains("\"legajo\":2003"));
     }
 
     @Test

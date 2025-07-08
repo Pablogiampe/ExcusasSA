@@ -8,7 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/excusas")
+@RequestMapping("/excusas")
 public class ExcusaController {
 
     @GetMapping("/motivos")

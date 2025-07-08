@@ -51,20 +51,14 @@ public class ProntuarioControllerIntegrationTest {
     @Test
     public void testObtenerTodosLosProntuarios_ConProntuarios_DebeRetornarFormatoEsperado() throws Exception {
         // Given - Generar una excusa inverosímil para crear un prontuario
-        EmpleadoController.ExcusaRequest excusaRequest = new EmpleadoController.ExcusaRequest();
-        excusaRequest.setMotivo("INCREIBLE_INVEROSIMIL");
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<EmpleadoController.ExcusaRequest> request = new HttpEntity<>(excusaRequest, headers);
-
-        // Generar la excusa
+        // Ahora el motivo va en la URL como path parameter
         ResponseEntity<String> excusaResponse = restTemplate.postForEntity(
-                getEmpleadosUrl() + "/2001/excusas", request, String.class);
+                getEmpleadosUrl() + "/2001/excusas/INCREIBLE_INVEROSIMIL", null, String.class);
 
         // Verificar que la excusa se generó correctamente
         assertEquals(HttpStatus.OK, excusaResponse.getStatusCode());
-        assertTrue(excusaResponse.getBody().contains("ExcusaInverosimil"));
+        assertNotNull(excusaResponse.getBody());
+        assertTrue(excusaResponse.getBody().contains("INCREIBLE_INVEROSIMIL"));
 
         // When - Obtener prontuarios
         ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl(), String.class);
@@ -98,20 +92,14 @@ public class ProntuarioControllerIntegrationTest {
     @Test
     public void testObtenerProntuariosPorEmpleado_DebeRetornarFormatoEsperado() throws Exception {
         // Given - Generar una excusa inverosímil para crear un prontuario
-        EmpleadoController.ExcusaRequest excusaRequest = new EmpleadoController.ExcusaRequest();
-        excusaRequest.setMotivo("INCREIBLE_INVEROSIMIL");
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<EmpleadoController.ExcusaRequest> request = new HttpEntity<>(excusaRequest, headers);
-
-        // Generar la excusa
+        // Ahora el motivo va en la URL como path parameter
         ResponseEntity<String> excusaResponse = restTemplate.postForEntity(
-                getEmpleadosUrl() + "/2001/excusas", request, String.class);
+                getEmpleadosUrl() + "/2001/excusas/INCREIBLE_INVEROSIMIL", null, String.class);
 
         // Verificar que la excusa se generó correctamente
         assertEquals(HttpStatus.OK, excusaResponse.getStatusCode());
-        assertTrue(excusaResponse.getBody().contains("ExcusaInverosimil"));
+        assertNotNull(excusaResponse.getBody());
+        assertTrue(excusaResponse.getBody().contains("INCREIBLE_INVEROSIMIL"));
 
         // When - Obtener prontuarios por empleado
         ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl() + "/empleado/2001", String.class);
@@ -143,3 +131,4 @@ public class ProntuarioControllerIntegrationTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 }
+

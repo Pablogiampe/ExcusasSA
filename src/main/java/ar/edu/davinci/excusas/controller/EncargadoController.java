@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/encargados")
+@RequestMapping("/encargados")
 public class EncargadoController {
 
     private final List<EncargadoBase> encargados = new ArrayList<>();
