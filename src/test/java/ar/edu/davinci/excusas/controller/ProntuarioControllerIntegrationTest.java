@@ -1,5 +1,6 @@
 package ar.edu.davinci.excusas.controller;
 
+import ar.edu.davinci.excusas.model.prontuario.AdministradorProntuarios;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +30,11 @@ public class ProntuarioControllerIntegrationTest {
 
     @BeforeEach
     public void setUp() {
-        // Limpiar prontuarios antes de cada test
+        // Limpiar prontuarios antes de cada test usando el endpoint
         restTemplate.exchange(getBaseUrl(), HttpMethod.DELETE, null, String.class);
+
+        // También limpiar directamente el singleton para asegurar estado limpio
+        AdministradorProntuarios.reset();
     }
 
     @Test
@@ -83,14 +87,12 @@ public class ProntuarioControllerIntegrationTest {
         assertTrue(response.getBody().contains("\"tipoExcusa\""));
         assertTrue(response.getBody().contains("\"motivoExcusa\""));
 
-        // Verificar datos específicos si hay prontuarios
-        if (!response.getBody().equals("[]")) {
-            assertTrue(response.getBody().contains("\"numeroLegajo\":2001"));
-            assertTrue(response.getBody().contains("\"nombreEmpleado\":\"Juan Pérez\""));
-            assertTrue(response.getBody().contains("\"emailEmpleado\":\"juan.perez@empresa.com\""));
-            assertTrue(response.getBody().contains("\"tipoExcusa\":\"ExcusaInverosimil\""));
-            assertTrue(response.getBody().contains("\"motivoExcusa\":\"INCREIBLE_INVEROSIMIL\""));
-        }
+        // Verificar datos específicos
+        assertTrue(response.getBody().contains("\"numeroLegajo\":2001"));
+        assertTrue(response.getBody().contains("\"nombreEmpleado\":\"Juan Pérez\""));
+        assertTrue(response.getBody().contains("\"emailEmpleado\":\"juan.perez@empresa.com\""));
+        assertTrue(response.getBody().contains("\"tipoExcusa\":\"ExcusaInverosimil\""));
+        assertTrue(response.getBody().contains("\"motivoExcusa\":\"INCREIBLE_INVEROSIMIL\""));
     }
 
     @Test
@@ -126,11 +128,9 @@ public class ProntuarioControllerIntegrationTest {
         assertTrue(response.getBody().contains("\"numeroLegajo\""));
         assertTrue(response.getBody().contains("\"nombreEmpleado\""));
 
-        // Si hay prontuarios, verificar datos específicos del empleado
-        if (!response.getBody().equals("[]")) {
-            assertTrue(response.getBody().contains("\"numeroLegajo\":2001"));
-            assertTrue(response.getBody().contains("\"nombreEmpleado\":\"Juan Pérez\""));
-        }
+        // Verificar datos específicos del empleado
+        assertTrue(response.getBody().contains("\"numeroLegajo\":2001"));
+        assertTrue(response.getBody().contains("\"nombreEmpleado\":\"Juan Pérez\""));
     }
 
     @Test
