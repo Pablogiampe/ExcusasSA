@@ -24,19 +24,15 @@ public class EncargadoControllerIntegrationTest {
 
     @Test
     public void testObtenerTodosLosEncargados_DebeRetornarListaConFormatoEsperado() throws Exception {
-        // When
         ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl(), String.class);
 
-        // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
 
-        // Verificar que es un array JSON
-        assertTrue(response.getBody().startsWith("["));
+         assertTrue(response.getBody().startsWith("["));
         assertTrue(response.getBody().endsWith("]"));
 
-        // Verificar que contiene los encargados iniciales
-        assertTrue(response.getBody().contains("\"nombre\":\"Ana García\""));
+         assertTrue(response.getBody().contains("\"nombre\":\"Ana García\""));
         assertTrue(response.getBody().contains("\"tipoEncargado\":\"Recepcionista\""));
         assertTrue(response.getBody().contains("\"legajo\":1001"));
 
@@ -55,14 +51,11 @@ public class EncargadoControllerIntegrationTest {
 
     @Test
     public void testObtenerEncargadoPorLegajo_DebeRetornarEncargadoConFormatoEsperado() throws Exception {
-        // When
         ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl() + "/1001", String.class);
 
-        // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
 
-        // Verificar formato JSON del encargado
         assertTrue(response.getBody().contains("\"legajo\":1001"));
         assertTrue(response.getBody().contains("\"nombre\":\"Ana García\""));
         assertTrue(response.getBody().contains("\"email\":\"ana@excusas.com\""));
@@ -71,7 +64,6 @@ public class EncargadoControllerIntegrationTest {
 
     @Test
     public void testCambiarModoEncargado_DebeRetornarMensajeExitoso() throws Exception {
-        // Given
         EncargadoController.CambiarModoRequest modoRequest = new EncargadoController.CambiarModoRequest();
         modoRequest.setModo("VAGO");
 
@@ -79,11 +71,9 @@ public class EncargadoControllerIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<EncargadoController.CambiarModoRequest> request = new HttpEntity<>(modoRequest, headers);
 
-        // When
         ResponseEntity<String> response = restTemplate.exchange(
                 getBaseUrl() + "/1001/modo", HttpMethod.PUT, request, String.class);
 
-        // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("Modo cambiado exitosamente a: VAGO", response.getBody());
@@ -91,7 +81,6 @@ public class EncargadoControllerIntegrationTest {
 
     @Test
     public void testCambiarModoInvalido_DebeRetornar400() throws Exception {
-        // Given
         EncargadoController.CambiarModoRequest modoRequest = new EncargadoController.CambiarModoRequest();
         modoRequest.setModo("MODO_INEXISTENTE");
 
@@ -99,13 +88,72 @@ public class EncargadoControllerIntegrationTest {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<EncargadoController.CambiarModoRequest> request = new HttpEntity<>(modoRequest, headers);
 
-        // When
         ResponseEntity<String> response = restTemplate.exchange(
                 getBaseUrl() + "/1001/modo", HttpMethod.PUT, request, String.class);
 
-        // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().contains("Modo no válido"));
     }
+    @Test
+    public void testCrearEncargado_DebeRetornarEncargadoCreado() throws Exception {
+        EncargadoController.CrearEncargadoRequest crearRequest = new EncargadoController.CrearEncargadoRequest();
+        crearRequest.setNombre("Nuevo Encargado");
+        crearRequest.setEmail("nuevo.encargado@excusas.com");
+        crearRequest.setLegajo(1005); // Un legajo que no exista
+        crearRequest.setTipoEncargado("Recepcionista");
+        crearRequest.setModo("NORMAL");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<EncargadoController.CrearEncargadoRequest> request = new HttpEntity<>(crearRequest, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                getBaseUrl(), HttpMethod.POST, request, String.class);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().contains("\"legajo\":1005"));
+        assertTrue(response.getBody().contains("\"nombre\":\"Nuevo Encargado\""));
+        assertTrue(response.getBody().contains("\"tipoEncargado\":\"Recepcionista\""));
+    }
+
+    @Test
+    public void testCrearEncargado_LegajoExistente_DebeRetornar400() throws Exception {
+        EncargadoController.CrearEncargadoRequest crearRequest = new EncargadoController.CrearEncargadoRequest();
+        crearRequest.setNombre("Encargado Duplicado");
+        crearRequest.setEmail("duplicado@excusas.com");
+        crearRequest.setLegajo(1001); // Legajo existente
+        crearRequest.setTipoEncargado("Recepcionista");
+        crearRequest.setModo("NORMAL");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<EncargadoController.CrearEncargadoRequest> request = new HttpEntity<>(crearRequest, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                getBaseUrl(), HttpMethod.POST, request, String.class);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    public void testCrearEncargado_TipoInvalido_DebeRetornar400() throws Exception {
+        EncargadoController.CrearEncargadoRequest crearRequest = new EncargadoController.CrearEncargadoRequest();
+        crearRequest.setNombre("Encargado Invalido");
+        crearRequest.setEmail("invalido@excusas.com");
+        crearRequest.setLegajo(1006);
+        crearRequest.setTipoEncargado("TIPO_INEXISTENTE"); // Tipo inválido
+        crearRequest.setModo("NORMAL");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<EncargadoController.CrearEncargadoRequest> request = new HttpEntity<>(crearRequest, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(
+                getBaseUrl(), HttpMethod.POST, request, String.class);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
 }
+

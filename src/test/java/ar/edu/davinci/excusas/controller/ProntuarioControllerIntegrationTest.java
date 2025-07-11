@@ -30,19 +30,15 @@ public class ProntuarioControllerIntegrationTest {
 
     @BeforeEach
     public void setUp() {
-        // Limpiar prontuarios antes de cada test usando el endpoint
         restTemplate.exchange(getBaseUrl(), HttpMethod.DELETE, null, String.class);
 
-        // También limpiar directamente el singleton para asegurar estado limpio
         AdministradorProntuarios.reset();
     }
 
     @Test
     public void testObtenerTodosLosProntuarios_SinProntuarios_DebeRetornarArrayVacio() throws Exception {
-        // When
         ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl(), String.class);
 
-        // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("[]", response.getBody());
@@ -50,38 +46,29 @@ public class ProntuarioControllerIntegrationTest {
 
     @Test
     public void testObtenerTodosLosProntuarios_ConProntuarios_DebeRetornarFormatoEsperado() throws Exception {
-        // Given - Generar una excusa inverosímil para crear un prontuario
-        // Ahora el motivo va en la URL como path parameter
         ResponseEntity<String> excusaResponse = restTemplate.postForEntity(
                 getEmpleadosUrl() + "/2001/excusas/INCREIBLE_INVEROSIMIL", null, String.class);
 
-        // Verificar que la excusa se generó correctamente
         assertEquals(HttpStatus.OK, excusaResponse.getStatusCode());
         assertNotNull(excusaResponse.getBody());
         assertTrue(excusaResponse.getBody().contains("INCREIBLE_INVEROSIMIL"));
 
-        // When - Obtener prontuarios
         ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl(), String.class);
 
-        // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
 
-        // Verificar que no está vacío (debe haber al menos un prontuario)
         assertFalse(response.getBody().equals("[]"), "Debería haber al menos un prontuario");
 
-        // Verificar formato JSON del prontuario
         assertTrue(response.getBody().startsWith("["));
         assertTrue(response.getBody().endsWith("]"));
 
-        // Verificar que contiene los campos esperados del prontuario
         assertTrue(response.getBody().contains("\"numeroLegajo\""));
         assertTrue(response.getBody().contains("\"nombreEmpleado\""));
         assertTrue(response.getBody().contains("\"emailEmpleado\""));
         assertTrue(response.getBody().contains("\"tipoExcusa\""));
         assertTrue(response.getBody().contains("\"motivoExcusa\""));
 
-        // Verificar datos específicos
         assertTrue(response.getBody().contains("\"numeroLegajo\":2001"));
         assertTrue(response.getBody().contains("\"nombreEmpleado\":\"Juan Pérez\""));
         assertTrue(response.getBody().contains("\"emailEmpleado\":\"juan.perez@empresa.com\""));
@@ -91,43 +78,33 @@ public class ProntuarioControllerIntegrationTest {
 
     @Test
     public void testObtenerProntuariosPorEmpleado_DebeRetornarFormatoEsperado() throws Exception {
-        // Given - Generar una excusa inverosímil para crear un prontuario
-        // Ahora el motivo va en la URL como path parameter
         ResponseEntity<String> excusaResponse = restTemplate.postForEntity(
                 getEmpleadosUrl() + "/2001/excusas/INCREIBLE_INVEROSIMIL", null, String.class);
 
-        // Verificar que la excusa se generó correctamente
         assertEquals(HttpStatus.OK, excusaResponse.getStatusCode());
         assertNotNull(excusaResponse.getBody());
         assertTrue(excusaResponse.getBody().contains("INCREIBLE_INVEROSIMIL"));
 
-        // When - Obtener prontuarios por empleado
         ResponseEntity<String> response = restTemplate.getForEntity(getBaseUrl() + "/empleado/2001", String.class);
 
-        // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
 
-        // Verificar formato JSON (debe ser un array)
         assertTrue(response.getBody().startsWith("["));
         assertTrue(response.getBody().endsWith("]"));
 
-        // Verificar que contiene los campos esperados
         assertTrue(response.getBody().contains("\"numeroLegajo\""));
         assertTrue(response.getBody().contains("\"nombreEmpleado\""));
 
-        // Verificar datos específicos del empleado
         assertTrue(response.getBody().contains("\"numeroLegajo\":2001"));
         assertTrue(response.getBody().contains("\"nombreEmpleado\":\"Juan Pérez\""));
     }
 
     @Test
     public void testLimpiarProntuarios_DebeRetornar200() throws Exception {
-        // When
         ResponseEntity<String> response = restTemplate.exchange(
                 getBaseUrl(), HttpMethod.DELETE, null, String.class);
 
-        // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 }

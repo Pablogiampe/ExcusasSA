@@ -53,7 +53,6 @@ public class ProntuarioController {
         return ResponseEntity.ok().build();
     }
 
-    // DTO
     public static class ProntuarioResponse {
         private int numeroLegajo;
         private String nombreEmpleado;

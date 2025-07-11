@@ -26,7 +26,6 @@ public class EmpleadoController {
 
     public EmpleadoController() {
         this.lineaEncargados = new LineaEncargados(new EmailSenderImpl());
-        // Agregar algunos empleados de ejemplo
         empleados.add(new Empleado("Juan Pérez", "juan.perez@empresa.com", 2001));
         empleados.add(new Empleado("María García", "maria.garcia@empresa.com", 2002));
         empleados.add(new Empleado("Carlos López", "carlos.lopez@empresa.com", 2003));
@@ -49,7 +48,6 @@ public class EmpleadoController {
 
     @PostMapping
     public ResponseEntity<Empleado> crearEmpleado(@Valid @RequestBody EmpleadoRequest request) {
-        // Verificar que no exista un empleado con el mismo legajo
         boolean existeLegajo = empleados.stream()
                 .anyMatch(e -> e.getLegajo() == request.getLegajo());
 
@@ -80,7 +78,6 @@ public class EmpleadoController {
             return ResponseEntity.notFound().build();
         }
 
-        // Validar que el motivo no esté vacío
         if (motivo == null || motivo.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -108,7 +105,6 @@ public class EmpleadoController {
         }
     }
 
-    // DTOs
     public static class EmpleadoRequest {
         @NotBlank(message = "El nombre no puede estar vacío")
         private String nombre;
