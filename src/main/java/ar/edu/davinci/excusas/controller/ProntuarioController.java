@@ -1,78 +1,80 @@
 package ar.edu.davinci.excusas.controller;
 
-import ar.edu.davinci.excusas.model.prontuario.AdministradorProntuarios;
 import ar.edu.davinci.excusas.model.prontuario.Prontuario;
+import ar.edu.davinci.excusas.service.ProntuarioService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/prontuarios")
 public class ProntuarioController {
 
+    private final ProntuarioService prontuarioService;
+
+    @Autowired
+    public ProntuarioController(ProntuarioService prontuarioService) {
+        this.prontuarioService = prontuarioService;
+    }
+
     @GetMapping
     public ResponseEntity<List<ProntuarioResponse>> obtenerTodosLosProntuarios() {
-        List<Prontuario> prontuarios = AdministradorProntuarios.getInstance().getProntuarios();
-        
+        List<Prontuario> prontuarios = prontuarioService.obtenerTodosLosProntuarios();
         List<ProntuarioResponse> response = prontuarios.stream()
-                .map(p -> new ProntuarioResponse(
-                        p.getNumeroLegajo(),
-                        p.getEmpleado().getNombre(),
-                        p.getEmpleado().getEmail(),
-                        p.getExcusa().getClass().getSimpleName(),
-                        p.getExcusa().getMotivo().toString()
-                ))
-                .collect(Collectors.toList());
-        
+                .map(this::convertirAProntuarioResponse)
+                .toList();
+
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/empleado/{legajo}")
-    public ResponseEntity<List<ProntuarioResponse>> obtenerProntuariosPorEmpleado(@PathVariable int legajo) {
-        List<Prontuario> prontuarios = AdministradorProntuarios.getInstance().getProntuarios();
-        
+    @GetMapping("/{legajo}")
+    public ResponseEntity<List<ProntuarioResponse>> obtenerProntuariosPorLegajo(@PathVariable int legajo) {
+        List<Prontuario> prontuarios = prontuarioService.obtenerProntuariosPorLegajo(legajo);
         List<ProntuarioResponse> response = prontuarios.stream()
-                .filter(p -> p.getNumeroLegajo() == legajo)
-                .map(p -> new ProntuarioResponse(
-                        p.getNumeroLegajo(),
-                        p.getEmpleado().getNombre(),
-                        p.getEmpleado().getEmail(),
-                        p.getExcusa().getClass().getSimpleName(),
-                        p.getExcusa().getMotivo().toString()
-                ))
-                .collect(Collectors.toList());
-        
+                .map(this::convertirAProntuarioResponse)
+                .toList();
+
         return ResponseEntity.ok(response);
     }
 
-    @DeleteMapping
-    public ResponseEntity<Void> limpiarProntuarios() {
-        AdministradorProntuarios.reset();
-        return ResponseEntity.ok().build();
+    @DeleteMapping("/limpiar")
+    public ResponseEntity<String> limpiarProntuarios() {
+        prontuarioService.limpiarProntuarios();
+        return ResponseEntity.ok("Prontuarios limpiados exitosamente");
+    }
+
+    private ProntuarioResponse convertirAProntuarioResponse(Prontuario prontuario) {
+        return new ProntuarioResponse(
+                prontuario.getEmpleado().getLegajo(),
+                prontuario.getEmpleado().getNombre(),
+                prontuario.getEmpleado().getEmail(),
+                prontuario.getExcusa().getMotivo().toString(),
+                prontuario.getExcusa().getClass().getSimpleName()
+        );
     }
 
     public static class ProntuarioResponse {
-        private int numeroLegajo;
+        private int legajoEmpleado;
         private String nombreEmpleado;
         private String emailEmpleado;
-        private String tipoExcusa;
         private String motivoExcusa;
+        private String tipoExcusa;
 
-        public ProntuarioResponse(int numeroLegajo, String nombreEmpleado, String emailEmpleado, 
-                                String tipoExcusa, String motivoExcusa) {
-            this.numeroLegajo = numeroLegajo;
+        public ProntuarioResponse(int legajoEmpleado, String nombreEmpleado, String emailEmpleado,
+                                  String motivoExcusa, String tipoExcusa) {
+            this.legajoEmpleado = legajoEmpleado;
             this.nombreEmpleado = nombreEmpleado;
             this.emailEmpleado = emailEmpleado;
-            this.tipoExcusa = tipoExcusa;
             this.motivoExcusa = motivoExcusa;
+            this.tipoExcusa = tipoExcusa;
         }
 
-        public int getNumeroLegajo() { return numeroLegajo; }
+        public int getLegajoEmpleado() { return legajoEmpleado; }
         public String getNombreEmpleado() { return nombreEmpleado; }
         public String getEmailEmpleado() { return emailEmpleado; }
-        public String getTipoExcusa() { return tipoExcusa; }
         public String getMotivoExcusa() { return motivoExcusa; }
+        public String getTipoExcusa() { return tipoExcusa; }
     }
 }

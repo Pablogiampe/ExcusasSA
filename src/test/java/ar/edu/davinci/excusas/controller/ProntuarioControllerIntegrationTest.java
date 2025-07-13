@@ -21,11 +21,11 @@ public class ProntuarioControllerIntegrationTest {
     private TestRestTemplate restTemplate;
 
     private String getBaseUrl() {
-        return "http://localhost:" + port + "/api/prontuarios";
+        return "http://localhost:" + port + "/prontuarios";
     }
 
     private String getEmpleadosUrl() {
-        return "http://localhost:" + port + "/api/empleados";
+        return "http://localhost:" + port + "/empleados";
     }
 
     @BeforeEach

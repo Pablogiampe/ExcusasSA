@@ -1,16 +1,15 @@
 package ar.edu.davinci.excusas.controller;
 
-import ar.edu.davinci.excusas.model.empleados.encargados.*;
-import ar.edu.davinci.excusas.model.empleados.encargados.modos.*;
-import ar.edu.davinci.excusas.model.mail.EmailSenderImpl;
+import ar.edu.davinci.excusas.model.empleados.encargados.EncargadoBase;
+import ar.edu.davinci.excusas.service.EncargadoService;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,19 +17,16 @@ import java.util.Optional;
 @RequestMapping("/encargados")
 public class EncargadoController {
 
-    private final List<EncargadoBase> encargados = new ArrayList<>();
+    private final EncargadoService encargadoService;
 
-    public EncargadoController() {
-        EmailSenderImpl emailSender = new EmailSenderImpl();
-
-        encargados.add(new Recepcionista("Ana García", "ana@excusas.com", 1001, new ModoNormal(), emailSender));
-        encargados.add(new SupervisorArea("Carlos López", "carlos@excusas.com", 1002, new ModoProductivo(), emailSender));
-        encargados.add(new GerenteRRHH("María Rodríguez", "maria@excusas.com", 1003, new ModoNormal(), emailSender));
-        encargados.add(new CEO("Roberto Silva", "roberto@excusas.com", 1004, new ModoNormal(), emailSender));
+    @Autowired
+    public EncargadoController(EncargadoService encargadoService) {
+        this.encargadoService = encargadoService;
     }
 
     @GetMapping
     public ResponseEntity<List<EncargadoResponse>> obtenerTodosLosEncargados() {
+        List<EncargadoBase> encargados = encargadoService.obtenerTodosLosEncargados();
         List<EncargadoResponse> response = encargados.stream()
                 .map(e -> new EncargadoResponse(
                         e.getLegajo(),
@@ -45,9 +41,7 @@ public class EncargadoController {
 
     @GetMapping("/{legajo}")
     public ResponseEntity<EncargadoResponse> obtenerEncargadoPorLegajo(@PathVariable int legajo) {
-        Optional<EncargadoBase> encargado = encargados.stream()
-                .filter(e -> e.getLegajo() == legajo)
-                .findFirst();
+        Optional<EncargadoBase> encargado = encargadoService.obtenerEncargadoPorLegajo(legajo);
 
         if (encargado.isPresent()) {
             EncargadoBase e = encargado.get();
@@ -68,52 +62,24 @@ public class EncargadoController {
             @PathVariable int legajo,
             @RequestBody CambiarModoRequest request) {
 
-        Optional<EncargadoBase> encargadoOpt = encargados.stream()
-                .filter(e -> e.getLegajo() == legajo)
-                .findFirst();
-
-        if (encargadoOpt.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-
         try {
-            EncargadoBase encargado = encargadoOpt.get();
-            IModo nuevoModo = crearModo(request.getModo());
-
-            EncargadoBase encargadoActualizado = crearEncargadoConNuevoModo(encargado, nuevoModo);
-
-            int index = encargados.indexOf(encargado);
-            encargados.set(index, encargadoActualizado);
-
+            encargadoService.cambiarModoEncargado(legajo, request.getModo());
             return ResponseEntity.ok("Modo cambiado exitosamente a: " + request.getModo());
         } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("Modo no válido: " + request.getModo());
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }
 
     @PostMapping
     public ResponseEntity<EncargadoResponse> crearEncargado(@Valid @RequestBody CrearEncargadoRequest request) {
-        boolean existeLegajo = encargados.stream()
-                .anyMatch(e -> e.getLegajo() == request.getLegajo());
-
-        if (existeLegajo) {
-            return ResponseEntity.badRequest().build();
-        }
-
         try {
-            EmailSenderImpl emailSender = new EmailSenderImpl();
-            IModo modo = crearModo(request.getModo());
-
-            EncargadoBase nuevoEncargado = crearEncargadoPorTipo(
-                    request.getTipoEncargado(),
+            EncargadoBase nuevoEncargado = encargadoService.crearEncargado(
                     request.getNombre(),
                     request.getEmail(),
                     request.getLegajo(),
-                    modo,
-                    emailSender
+                    request.getTipoEncargado(),
+                    request.getModo()
             );
-
-            encargados.add(nuevoEncargado);
 
             EncargadoResponse response = new EncargadoResponse(
                     nuevoEncargado.getLegajo(),
@@ -126,62 +92,6 @@ public class EncargadoController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
-    }
-
-    private IModo crearModo(String tipoModo) {
-        return switch (tipoModo.toUpperCase()) {
-            case "NORMAL" -> new ModoNormal();
-            case "PRODUCTIVO" -> new ModoProductivo();
-            case "VAGO" -> new ModoVago();
-            default -> throw new IllegalArgumentException("Modo no válido: " + tipoModo);
-        };
-    }
-
-    private EncargadoBase crearEncargadoPorTipo(String tipo, String nombre, String email,
-                                                int legajo, IModo modo, EmailSenderImpl emailSender) {
-        return switch (tipo.toUpperCase()) {
-            case "RECEPCIONISTA" -> new Recepcionista(nombre, email, legajo, modo, emailSender);
-            case "SUPERVISORAREA" -> new SupervisorArea(nombre, email, legajo, modo, emailSender);
-            case "GERENTERRHH" -> new GerenteRRHH(nombre, email, legajo, modo, emailSender);
-            case "CEO" -> new CEO(nombre, email, legajo, modo, emailSender);
-            default -> throw new IllegalArgumentException("Tipo de encargado no válido: " + tipo);
-        };
-    }
-
-    private EncargadoBase crearEncargadoConNuevoModo(EncargadoBase encargadoOriginal, IModo nuevoModo) {
-        EmailSenderImpl emailSender = new EmailSenderImpl();
-
-        return switch (encargadoOriginal.getClass().getSimpleName()) {
-            case "Recepcionista" -> new Recepcionista(
-                    encargadoOriginal.getNombre(),
-                    encargadoOriginal.getEmail(),
-                    encargadoOriginal.getLegajo(),
-                    nuevoModo,
-                    emailSender
-            );
-            case "SupervisorArea" -> new SupervisorArea(
-                    encargadoOriginal.getNombre(),
-                    encargadoOriginal.getEmail(),
-                    encargadoOriginal.getLegajo(),
-                    nuevoModo,
-                    emailSender
-            );
-            case "GerenteRRHH" -> new GerenteRRHH(
-                    encargadoOriginal.getNombre(),
-                    encargadoOriginal.getEmail(),
-                    encargadoOriginal.getLegajo(),
-                    nuevoModo,
-                    emailSender
-            );
-            case "CEO" -> new CEO(
-                    encargadoOriginal.getNombre(),
-                    encargadoOriginal.getEmail(),
-                    encargadoOriginal.getLegajo(),
-                    nuevoModo,
-                    emailSender
-            );
-            default -> throw new IllegalArgumentException("Tipo de encargado no reconocido");
-        };
     }
 
     public static class EncargadoResponse {
@@ -211,6 +121,7 @@ public class EncargadoController {
         public String getModo() { return modo; }
         public void setModo(String modo) { this.modo = modo; }
     }
+
     public static class CrearEncargadoRequest {
         @NotBlank(message = "El nombre no puede estar vacío")
         private String nombre;

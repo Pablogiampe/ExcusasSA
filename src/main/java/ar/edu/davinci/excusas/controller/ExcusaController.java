@@ -1,10 +1,9 @@
 package ar.edu.davinci.excusas.controller;
 
-import ar.edu.davinci.excusas.model.empleados.Empleado;
-import ar.edu.davinci.excusas.model.empleados.encargados.LineaEncargados;
 import ar.edu.davinci.excusas.model.excusas.Excusa;
 import ar.edu.davinci.excusas.model.excusas.MotivoExcusa;
-import ar.edu.davinci.excusas.model.mail.EmailSenderImpl;
+import ar.edu.davinci.excusas.service.ExcusaService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,48 +13,31 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/excusas")
 public class ExcusaController {
 
-    private final List<Empleado> empleados = new ArrayList<>();
-    private final List<Excusa> excusas = new ArrayList<>();
-    private final LineaEncargados lineaEncargados;
+    private final ExcusaService excusaService;
 
-    public ExcusaController() {
-        this.lineaEncargados = new LineaEncargados(new EmailSenderImpl());
-        empleados.add(new Empleado("Juan Pérez", "juan.perez@empresa.com", 2001));
-        empleados.add(new Empleado("María García", "maria.garcia@empresa.com", 2002));
-        empleados.add(new Empleado("Carlos López", "carlos.lopez@empresa.com", 2003));
+    @Autowired
+    public ExcusaController(ExcusaService excusaService) {
+        this.excusaService = excusaService;
     }
 
     @PostMapping
     public ResponseEntity<ExcusaResponse> registrarExcusa(@Valid @RequestBody RegistrarExcusaRequest request) {
-        Optional<Empleado> empleadoOpt = empleados.stream()
-                .filter(e -> e.getLegajo() == request.getLegajo())
-                .findFirst();
-
-        if (empleadoOpt.isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-
         try {
-            Empleado empleado = empleadoOpt.get();
             MotivoExcusa motivoEnum = MotivoExcusa.valueOf(request.getMotivo().toUpperCase());
-
-            Excusa excusa = empleado.generarYEnviarExcusa(motivoEnum, lineaEncargados);
-            excusas.add(excusa);
+            Excusa excusa = excusaService.registrarExcusa(request.getLegajo(), motivoEnum);
 
             ExcusaResponse response = new ExcusaResponse(
                     excusa.getMotivo().toString(),
-                    empleado.getLegajo(),
-                    empleado.getNombre(),
-                    empleado.getEmail(),
+                    excusa.getEmpleado().getLegajo(),
+                    excusa.getEmpleado().getNombre(),
+                    excusa.getEmpleado().getEmail(),
                     excusa.getClass().getSimpleName(),
                     LocalDate.now()
             );
@@ -68,12 +50,12 @@ public class ExcusaController {
 
     @GetMapping("/{legajo}")
     public ResponseEntity<List<ExcusaResponse>> obtenerExcusasPorEmpleado(@PathVariable int legajo) {
-        List<ExcusaResponse> excusasEmpleado = excusas.stream()
-                .filter(e -> e.getEmpleado().getLegajo() == legajo)
+        List<Excusa> excusas = excusaService.obtenerExcusasPorEmpleado(legajo);
+        List<ExcusaResponse> response = excusas.stream()
                 .map(this::convertirAExcusaResponse)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(excusasEmpleado);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
@@ -82,14 +64,12 @@ public class ExcusaController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
             @RequestParam(required = false) String motivo) {
 
-        List<ExcusaResponse> resultado = excusas.stream()
-                .filter(e -> fechaDesde == null || !LocalDate.now().isBefore(fechaDesde))
-                .filter(e -> fechaHasta == null || !LocalDate.now().isAfter(fechaHasta))
-                .filter(e -> motivo == null || e.getMotivo().toString().equalsIgnoreCase(motivo))
+        List<Excusa> excusas = excusaService.obtenerTodasLasExcusas(fechaDesde, fechaHasta, motivo);
+        List<ExcusaResponse> response = excusas.stream()
                 .map(this::convertirAExcusaResponse)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/busqueda")
@@ -98,38 +78,34 @@ public class ExcusaController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta) {
 
-        List<ExcusaResponse> resultado = excusas.stream()
-                .filter(e -> e.getEmpleado().getLegajo() == legajo)
-                .filter(e -> fechaDesde == null || !LocalDate.now().isBefore(fechaDesde))
-                .filter(e -> fechaHasta == null || !LocalDate.now().isAfter(fechaHasta))
+        List<Excusa> excusas = excusaService.buscarExcusas(legajo, fechaDesde, fechaHasta);
+        List<ExcusaResponse> response = excusas.stream()
                 .map(this::convertirAExcusaResponse)
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/rechazadas")
     public ResponseEntity<List<ExcusaResponse>> obtenerExcusasRechazadas() {
-        List<ExcusaResponse> rechazadas = new ArrayList<>();
-        return ResponseEntity.ok(rechazadas);
+        List<Excusa> rechazadas = excusaService.obtenerExcusasRechazadas();
+        List<ExcusaResponse> response = rechazadas.stream()
+                .map(this::convertirAExcusaResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/eliminar")
     public ResponseEntity<EliminarExcusasResponse> eliminarExcusas(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaLimite) {
 
-        if (fechaLimite == null) {
+        try {
+            int cantidadEliminadas = excusaService.eliminarExcusas(fechaLimite);
+            EliminarExcusasResponse response = new EliminarExcusasResponse(cantidadEliminadas);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
-
-        int cantidadEliminadas = (int) excusas.stream()
-                .filter(e -> LocalDate.now().isBefore(fechaLimite))
-                .count();
-
-        excusas.removeIf(e -> LocalDate.now().isBefore(fechaLimite));
-
-        EliminarExcusasResponse response = new EliminarExcusasResponse(cantidadEliminadas);
-        return ResponseEntity.ok(response);
     }
 
     private ExcusaResponse convertirAExcusaResponse(Excusa excusa) {
@@ -142,7 +118,6 @@ public class ExcusaController {
                 LocalDate.now()
         );
     }
-
 
     public static class RegistrarExcusaRequest {
         @Positive(message = "El legajo debe ser un número positivo")
