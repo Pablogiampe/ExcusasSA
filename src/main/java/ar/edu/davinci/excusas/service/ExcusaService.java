@@ -81,4 +81,8 @@ public class ExcusaService {
     public List<Excusa> obtenerTodasLasExcusas() {
         return new ArrayList<>(excusas);
     }
+
+    public void clearExcusas() {
+        excusas.clear();
+    }
 }

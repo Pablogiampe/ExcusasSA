@@ -170,4 +170,5 @@ public class ExcusaController {
 
         public int getCantidadEliminadas() { return cantidadEliminadas; }
     }
+
 }

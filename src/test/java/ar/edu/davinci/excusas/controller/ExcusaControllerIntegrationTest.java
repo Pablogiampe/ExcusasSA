@@ -1,5 +1,6 @@
 package ar.edu.davinci.excusas.controller;
 
+import ar.edu.davinci.excusas.service.ExcusaService; // Importa ExcusaService
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +24,16 @@ public class ExcusaControllerIntegrationTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
+    @Autowired // Inyecta el ExcusaService
+    private ExcusaService excusaService;
+
     private String getBaseUrl() {
         return "http://localhost:" + port + "/api/excusas";
+    }
+
+    @BeforeEach // Este método se ejecuta antes de cada test
+    public void setup() {
+        excusaService.clearExcusas(); // Limpia la lista de excusas antes de cada test
     }
 
     private void registrarExcusa(int legajo, String motivo) {
