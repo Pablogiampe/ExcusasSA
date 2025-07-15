@@ -1,6 +1,6 @@
 package ar.edu.davinci.excusas.controller;
 
-import ar.edu.davinci.excusas.model.empleados.encargados.EncargadoBase;
+import ar.edu.davinci.excusas.dto.EncargadoDTO;
 import ar.edu.davinci.excusas.service.EncargadoService;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -25,36 +25,16 @@ public class EncargadoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EncargadoResponse>> obtenerTodosLosEncargados() {
-        List<EncargadoBase> encargados = encargadoService.obtenerTodosLosEncargados();
-        List<EncargadoResponse> response = encargados.stream()
-                .map(e -> new EncargadoResponse(
-                        e.getLegajo(),
-                        e.getNombre(),
-                        e.getEmail(),
-                        e.getClass().getSimpleName()
-                ))
-                .toList();
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<List<EncargadoDTO>> obtenerTodosLosEncargados() {
+        List<EncargadoDTO> encargados = encargadoService.obtenerTodosLosEncargados();
+        return ResponseEntity.ok(encargados);
     }
 
     @GetMapping("/{legajo}")
-    public ResponseEntity<EncargadoResponse> obtenerEncargadoPorLegajo(@PathVariable int legajo) {
-        Optional<EncargadoBase> encargado = encargadoService.obtenerEncargadoPorLegajo(legajo);
-
-        if (encargado.isPresent()) {
-            EncargadoBase e = encargado.get();
-            EncargadoResponse response = new EncargadoResponse(
-                    e.getLegajo(),
-                    e.getNombre(),
-                    e.getEmail(),
-                    e.getClass().getSimpleName()
-            );
-            return ResponseEntity.ok(response);
-        }
-
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<EncargadoDTO> obtenerEncargadoPorLegajo(@PathVariable int legajo) {
+        Optional<EncargadoDTO> encargado = encargadoService.obtenerEncargadoPorLegajo(legajo);
+        return encargado.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{legajo}/modo")
@@ -71,9 +51,9 @@ public class EncargadoController {
     }
 
     @PostMapping
-    public ResponseEntity<EncargadoResponse> crearEncargado(@Valid @RequestBody CrearEncargadoRequest request) {
+    public ResponseEntity<EncargadoDTO> crearEncargado(@Valid @RequestBody CrearEncargadoRequest request) {
         try {
-            EncargadoBase nuevoEncargado = encargadoService.crearEncargado(
+            EncargadoDTO nuevoEncargado = encargadoService.crearEncargado(
                     request.getNombre(),
                     request.getEmail(),
                     request.getLegajo(),
@@ -81,36 +61,10 @@ public class EncargadoController {
                     request.getModo()
             );
 
-            EncargadoResponse response = new EncargadoResponse(
-                    nuevoEncargado.getLegajo(),
-                    nuevoEncargado.getNombre(),
-                    nuevoEncargado.getEmail(),
-                    nuevoEncargado.getClass().getSimpleName()
-            );
-
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(nuevoEncargado);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
-    }
-
-    public static class EncargadoResponse {
-        private int legajo;
-        private String nombre;
-        private String email;
-        private String tipoEncargado;
-
-        public EncargadoResponse(int legajo, String nombre, String email, String tipoEncargado) {
-            this.legajo = legajo;
-            this.nombre = nombre;
-            this.email = email;
-            this.tipoEncargado = tipoEncargado;
-        }
-
-        public int getLegajo() { return legajo; }
-        public String getNombre() { return nombre; }
-        public String getEmail() { return email; }
-        public String getTipoEncargado() { return tipoEncargado; }
     }
 
     public static class CambiarModoRequest {
@@ -131,7 +85,7 @@ public class EncargadoController {
         private String email;
 
         @Positive(message = "El legajo debe ser un número positivo")
-        private int legajo;
+        private Integer legajo;
 
         @NotBlank(message = "El tipo de encargado no puede estar vacío")
         private String tipoEncargado;
@@ -147,8 +101,8 @@ public class EncargadoController {
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
 
-        public int getLegajo() { return legajo; }
-        public void setLegajo(int legajo) { this.legajo = legajo; }
+        public Integer getLegajo() { return legajo; }
+        public void setLegajo(Integer legajo) { this.legajo = legajo; }
 
         public String getTipoEncargado() { return tipoEncargado; }
         public void setTipoEncargado(String tipoEncargado) { this.tipoEncargado = tipoEncargado; }

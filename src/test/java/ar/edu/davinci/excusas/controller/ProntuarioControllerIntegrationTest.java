@@ -8,10 +8,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.annotation.DirtiesContext;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class ProntuarioControllerIntegrationTest {
 
     @LocalServerPort
@@ -21,11 +25,11 @@ public class ProntuarioControllerIntegrationTest {
     private TestRestTemplate restTemplate;
 
     private String getBaseUrl() {
-        return "http://localhost:" + port + "/prontuarios";
+        return "http://localhost:" + port + "/api/prontuarios";
     }
 
     private String getEmpleadosUrl() {
-        return "http://localhost:" + port + "/empleados";
+        return "http://localhost:" + port + "/api/empleados";
     }
 
     @BeforeEach
@@ -108,4 +112,3 @@ public class ProntuarioControllerIntegrationTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
     }
 }
-

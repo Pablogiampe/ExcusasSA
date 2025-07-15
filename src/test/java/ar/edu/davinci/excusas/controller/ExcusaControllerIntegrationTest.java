@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.LocalDate;
 import java.util.Arrays;
@@ -16,6 +17,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 public class ExcusaControllerIntegrationTest {
 
     @LocalServerPort
@@ -24,7 +26,7 @@ public class ExcusaControllerIntegrationTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
-    @Autowired // Inyecta el ExcusaService
+    @Autowired
     private ExcusaService excusaService;
 
     private String getBaseUrl() {

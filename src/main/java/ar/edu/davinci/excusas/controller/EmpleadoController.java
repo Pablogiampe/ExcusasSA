@@ -1,7 +1,7 @@
 package ar.edu.davinci.excusas.controller;
 
-import ar.edu.davinci.excusas.model.empleados.Empleado;
-import ar.edu.davinci.excusas.model.excusas.Excusa;
+import ar.edu.davinci.excusas.dto.EmpleadoDTO;
+import ar.edu.davinci.excusas.dto.ExcusaDTO;
 import ar.edu.davinci.excusas.model.excusas.MotivoExcusa;
 import ar.edu.davinci.excusas.service.EmpleadoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,22 +28,22 @@ public class EmpleadoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Empleado>> obtenerTodosLosEmpleados() {
-        List<Empleado> empleados = empleadoService.obtenerTodosLosEmpleados();
+    public ResponseEntity<List<EmpleadoDTO>> obtenerTodosLosEmpleados() {
+        List<EmpleadoDTO> empleados = empleadoService.obtenerTodosLosEmpleados();
         return ResponseEntity.ok(empleados);
     }
 
     @GetMapping("/{legajo}")
-    public ResponseEntity<Empleado> obtenerEmpleadoPorLegajo(@PathVariable int legajo) {
-        Optional<Empleado> empleado = empleadoService.obtenerEmpleadoPorLegajo(legajo);
+    public ResponseEntity<EmpleadoDTO> obtenerEmpleadoPorLegajo(@PathVariable int legajo) {
+        Optional<EmpleadoDTO> empleado = empleadoService.obtenerEmpleadoPorLegajo(legajo);
         return empleado.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Empleado> crearEmpleado(@Valid @RequestBody EmpleadoRequest request) {
+    public ResponseEntity<EmpleadoDTO> crearEmpleado(@Valid @RequestBody EmpleadoRequest request) {
         try {
-            Empleado nuevoEmpleado = empleadoService.crearEmpleado(
+            EmpleadoDTO nuevoEmpleado = empleadoService.crearEmpleado(
                     request.getNombre(),
                     request.getEmail(),
                     request.getLegajo()
@@ -55,7 +55,7 @@ public class EmpleadoController {
     }
 
     @PostMapping("/{legajo}/excusas/{motivo}")
-    public ResponseEntity<Excusa> generarExcusa(
+    public ResponseEntity<ExcusaDTO> generarExcusa(
             @PathVariable int legajo,
             @PathVariable String motivo) {
 
@@ -65,7 +65,7 @@ public class EmpleadoController {
 
         try {
             MotivoExcusa motivoEnum = MotivoExcusa.valueOf(motivo.toUpperCase());
-            Excusa excusa = empleadoService.generarExcusa(legajo, motivoEnum);
+            ExcusaDTO excusa = empleadoService.generarExcusa(legajo, motivoEnum);
             return ResponseEntity.ok(excusa);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -92,7 +92,7 @@ public class EmpleadoController {
         private String email;
 
         @Positive(message = "El legajo debe ser un número positivo")
-        private int legajo;
+        private Integer legajo;
 
         public EmpleadoRequest() {}
 
@@ -102,7 +102,7 @@ public class EmpleadoController {
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
 
-        public int getLegajo() { return legajo; }
-        public void setLegajo(int legajo) { this.legajo = legajo; }
+        public Integer getLegajo() { return legajo; }
+        public void setLegajo(Integer legajo) { this.legajo = legajo; }
     }
 }

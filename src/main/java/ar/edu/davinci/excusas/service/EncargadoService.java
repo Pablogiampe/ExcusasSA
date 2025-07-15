@@ -1,134 +1,121 @@
 package ar.edu.davinci.excusas.service;
 
+import ar.edu.davinci.excusas.dto.EncargadoDTO;
+import ar.edu.davinci.excusas.mapper.EncargadoMapper;
 import ar.edu.davinci.excusas.model.empleados.encargados.*;
 import ar.edu.davinci.excusas.model.empleados.encargados.modos.*;
+import ar.edu.davinci.excusas.model.entities.EncargadoEntity;
 import ar.edu.davinci.excusas.model.mail.EmailSenderImpl;
+import ar.edu.davinci.excusas.repository.EncargadoRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class EncargadoService {
 
-    private final List<EncargadoBase> encargados = new ArrayList<>();
+    private final EncargadoRepository encargadoRepository;
+    private final EncargadoMapper encargadoMapper;
 
-    public EncargadoService() {
+    @Autowired
+    public EncargadoService(EncargadoRepository encargadoRepository, EncargadoMapper encargadoMapper) {
+        this.encargadoRepository = encargadoRepository;
+        this.encargadoMapper = encargadoMapper;
         inicializarEncargados();
     }
 
     private void inicializarEncargados() {
-        EmailSenderImpl emailSender = new EmailSenderImpl();
-
-        encargados.add(new Recepcionista("Ana García", "ana@excusas.com", 1001, new ModoNormal(), emailSender));
-        encargados.add(new SupervisorArea("Carlos López", "carlos@excusas.com", 1002, new ModoProductivo(), emailSender));
-        encargados.add(new GerenteRRHH("María Rodríguez", "maria@excusas.com", 1003, new ModoNormal(), emailSender));
-        encargados.add(new CEO("Roberto Silva", "roberto@excusas.com", 1004, new ModoNormal(), emailSender));
+        if (encargadoRepository.count() == 0) {
+            encargadoRepository.save(new EncargadoEntity("Ana García", "ana@excusas.com", 1001, "Recepcionista", "NORMAL"));
+            encargadoRepository.save(new EncargadoEntity("Carlos López", "carlos@excusas.com", 1002, "SupervisorArea", "PRODUCTIVO"));
+            encargadoRepository.save(new EncargadoEntity("María Rodríguez", "maria@excusas.com", 1003, "GerenteRRHH", "NORMAL"));
+            encargadoRepository.save(new EncargadoEntity("Roberto Silva", "roberto@excusas.com", 1004, "CEO", "NORMAL"));
+        }
     }
 
-    public List<EncargadoBase> obtenerTodosLosEncargados() {
-        return new ArrayList<>(encargados);
+    @Transactional(readOnly = true)
+    public List<EncargadoDTO> obtenerTodosLosEncargados() {
+        return encargadoRepository.findAll().stream()
+                .map(encargadoMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public Optional<EncargadoBase> obtenerEncargadoPorLegajo(int legajo) {
-        return encargados.stream()
-                .filter(e -> e.getLegajo() == legajo)
-                .findFirst();
+    @Transactional(readOnly = true)
+    public Optional<EncargadoDTO> obtenerEncargadoPorLegajo(int legajo) {
+        return encargadoRepository.findById(legajo)
+                .map(encargadoMapper::toDTO);
     }
 
-    public EncargadoBase cambiarModoEncargado(int legajo, String tipoModo) {
-        Optional<EncargadoBase> encargadoOpt = obtenerEncargadoPorLegajo(legajo);
+    public EncargadoDTO cambiarModoEncargado(int legajo, String tipoModo) {
+        Optional<EncargadoEntity> encargadoOpt = encargadoRepository.findById(legajo);
 
         if (encargadoOpt.isEmpty()) {
             throw new IllegalArgumentException("No se encontró encargado con legajo: " + legajo);
         }
 
-        EncargadoBase encargado = encargadoOpt.get();
-        IModo nuevoModo = crearModo(tipoModo);
-        EncargadoBase encargadoActualizado = crearEncargadoConNuevoModo(encargado, nuevoModo);
+        // Validar que el modo sea válido
+        validarModo(tipoModo);
 
-        int index = encargados.indexOf(encargado);
-        encargados.set(index, encargadoActualizado);
-
-        return encargadoActualizado;
+        EncargadoEntity encargado = encargadoOpt.get();
+        encargado.setModo(tipoModo.toUpperCase());
+        
+        EncargadoEntity encargadoActualizado = encargadoRepository.save(encargado);
+        return encargadoMapper.toDTO(encargadoActualizado);
     }
 
-    public EncargadoBase crearEncargado(String nombre, String email, int legajo,
-                                        String tipoEncargado, String tipoModo) {
-        if (existeEncargadoConLegajo(legajo)) {
+    public EncargadoDTO crearEncargado(String nombre, String email, int legajo,
+                                      String tipoEncargado, String tipoModo) {
+        if (encargadoRepository.existsByLegajo(legajo)) {
             throw new IllegalArgumentException("Ya existe un encargado con el legajo: " + legajo);
         }
+        
+        if (encargadoRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Ya existe un encargado con el email: " + email);
+        }
 
-        EmailSenderImpl emailSender = new EmailSenderImpl();
-        IModo modo = crearModo(tipoModo);
+        // Validar tipo de encargado y modo
+        validarTipoEncargado(tipoEncargado);
+        validarModo(tipoModo);
 
-        EncargadoBase nuevoEncargado = crearEncargadoPorTipo(
-                tipoEncargado, nombre, email, legajo, modo, emailSender
-        );
+        EncargadoEntity nuevoEncargado = new EncargadoEntity(nombre, email, legajo, tipoEncargado.toUpperCase(), tipoModo.toUpperCase());
+        EncargadoEntity encargadoGuardado = encargadoRepository.save(nuevoEncargado);
 
-        encargados.add(nuevoEncargado);
-        return nuevoEncargado;
+        return encargadoMapper.toDTO(encargadoGuardado);
     }
 
-    private boolean existeEncargadoConLegajo(int legajo) {
-        return encargados.stream()
-                .anyMatch(e -> e.getLegajo() == legajo);
+    private void validarModo(String tipoModo) {
+        try {
+            switch (tipoModo.toUpperCase()) {
+                case "NORMAL":
+                case "PRODUCTIVO":
+                case "VAGO":
+                    break;
+                default:
+                    throw new IllegalArgumentException("Modo no válido: " + tipoModo);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Modo no válido: " + tipoModo);
+        }
     }
 
-    private IModo crearModo(String tipoModo) {
-        return switch (tipoModo.toUpperCase()) {
-            case "NORMAL" -> new ModoNormal();
-            case "PRODUCTIVO" -> new ModoProductivo();
-            case "VAGO" -> new ModoVago();
-            default -> throw new IllegalArgumentException("Modo no válido: " + tipoModo);
-        };
-    }
-
-    private EncargadoBase crearEncargadoPorTipo(String tipo, String nombre, String email,
-                                                int legajo, IModo modo, EmailSenderImpl emailSender) {
-        return switch (tipo.toUpperCase()) {
-            case "RECEPCIONISTA" -> new Recepcionista(nombre, email, legajo, modo, emailSender);
-            case "SUPERVISORAREA" -> new SupervisorArea(nombre, email, legajo, modo, emailSender);
-            case "GERENTERRHH" -> new GerenteRRHH(nombre, email, legajo, modo, emailSender);
-            case "CEO" -> new CEO(nombre, email, legajo, modo, emailSender);
-            default -> throw new IllegalArgumentException("Tipo de encargado no válido: " + tipo);
-        };
-    }
-
-    private EncargadoBase crearEncargadoConNuevoModo(EncargadoBase encargadoOriginal, IModo nuevoModo) {
-        EmailSenderImpl emailSender = new EmailSenderImpl();
-
-        return switch (encargadoOriginal.getClass().getSimpleName()) {
-            case "Recepcionista" -> new Recepcionista(
-                    encargadoOriginal.getNombre(),
-                    encargadoOriginal.getEmail(),
-                    encargadoOriginal.getLegajo(),
-                    nuevoModo,
-                    emailSender
-            );
-            case "SupervisorArea" -> new SupervisorArea(
-                    encargadoOriginal.getNombre(),
-                    encargadoOriginal.getEmail(),
-                    encargadoOriginal.getLegajo(),
-                    nuevoModo,
-                    emailSender
-            );
-            case "GerenteRRHH" -> new GerenteRRHH(
-                    encargadoOriginal.getNombre(),
-                    encargadoOriginal.getEmail(),
-                    encargadoOriginal.getLegajo(),
-                    nuevoModo,
-                    emailSender
-            );
-            case "CEO" -> new CEO(
-                    encargadoOriginal.getNombre(),
-                    encargadoOriginal.getEmail(),
-                    encargadoOriginal.getLegajo(),
-                    nuevoModo,
-                    emailSender
-            );
-            default -> throw new IllegalArgumentException("Tipo de encargado no reconocido");
-        };
+    private void validarTipoEncargado(String tipo) {
+        try {
+            switch (tipo.toUpperCase()) {
+                case "RECEPCIONISTA":
+                case "SUPERVISORAREA":
+                case "GERENTERRHH":
+                case "CEO":
+                    break;
+                default:
+                    throw new IllegalArgumentException("Tipo de encargado no válido: " + tipo);
+            }
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Tipo de encargado no válido: " + tipo);
+        }
     }
 }

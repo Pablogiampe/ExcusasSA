@@ -1,6 +1,6 @@
 package ar.edu.davinci.excusas.controller;
 
-import ar.edu.davinci.excusas.model.excusas.Excusa;
+import ar.edu.davinci.excusas.dto.ExcusaDTO;
 import ar.edu.davinci.excusas.model.excusas.MotivoExcusa;
 import ar.edu.davinci.excusas.service.ExcusaService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +14,6 @@ import jakarta.validation.constraints.Positive;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/excusas")
@@ -28,71 +27,46 @@ public class ExcusaController {
     }
 
     @PostMapping
-    public ResponseEntity<ExcusaResponse> registrarExcusa(@Valid @RequestBody RegistrarExcusaRequest request) {
+    public ResponseEntity<ExcusaDTO> registrarExcusa(@Valid @RequestBody RegistrarExcusaRequest request) {
         try {
             MotivoExcusa motivoEnum = MotivoExcusa.valueOf(request.getMotivo().toUpperCase());
-            Excusa excusa = excusaService.registrarExcusa(request.getLegajo(), motivoEnum);
-
-            ExcusaResponse response = new ExcusaResponse(
-                    excusa.getMotivo().toString(),
-                    excusa.getEmpleado().getLegajo(),
-                    excusa.getEmpleado().getNombre(),
-                    excusa.getEmpleado().getEmail(),
-                    excusa.getClass().getSimpleName(),
-                    LocalDate.now()
-            );
-
-            return ResponseEntity.ok(response);
+            ExcusaDTO excusa = excusaService.registrarExcusa(request.getLegajo(), motivoEnum);
+            return ResponseEntity.ok(excusa);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @GetMapping("/{legajo}")
-    public ResponseEntity<List<ExcusaResponse>> obtenerExcusasPorEmpleado(@PathVariable int legajo) {
-        List<Excusa> excusas = excusaService.obtenerExcusasPorEmpleado(legajo);
-        List<ExcusaResponse> response = excusas.stream()
-                .map(this::convertirAExcusaResponse)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(response);
+    public ResponseEntity<List<ExcusaDTO>> obtenerExcusasPorEmpleado(@PathVariable int legajo) {
+        List<ExcusaDTO> excusas = excusaService.obtenerExcusasPorEmpleado(legajo);
+        return ResponseEntity.ok(excusas);
     }
 
     @GetMapping
-    public ResponseEntity<List<ExcusaResponse>> obtenerTodasLasExcusas(
+    public ResponseEntity<List<ExcusaDTO>> obtenerTodasLasExcusas(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta,
             @RequestParam(required = false) String motivo) {
 
-        List<Excusa> excusas = excusaService.obtenerTodasLasExcusas(fechaDesde, fechaHasta, motivo);
-        List<ExcusaResponse> response = excusas.stream()
-                .map(this::convertirAExcusaResponse)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(response);
+        List<ExcusaDTO> excusas = excusaService.obtenerTodasLasExcusas(fechaDesde, fechaHasta, motivo);
+        return ResponseEntity.ok(excusas);
     }
 
     @GetMapping("/busqueda")
-    public ResponseEntity<List<ExcusaResponse>> buscarExcusas(
+    public ResponseEntity<List<ExcusaDTO>> buscarExcusas(
             @RequestParam int legajo,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta) {
 
-        List<Excusa> excusas = excusaService.buscarExcusas(legajo, fechaDesde, fechaHasta);
-        List<ExcusaResponse> response = excusas.stream()
-                .map(this::convertirAExcusaResponse)
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(response);
+        List<ExcusaDTO> excusas = excusaService.buscarExcusas(legajo, fechaDesde, fechaHasta);
+        return ResponseEntity.ok(excusas);
     }
 
     @GetMapping("/rechazadas")
-    public ResponseEntity<List<ExcusaResponse>> obtenerExcusasRechazadas() {
-        List<Excusa> rechazadas = excusaService.obtenerExcusasRechazadas();
-        List<ExcusaResponse> response = rechazadas.stream()
-                .map(this::convertirAExcusaResponse)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<List<ExcusaDTO>> obtenerExcusasRechazadas() {
+        List<ExcusaDTO> rechazadas = excusaService.obtenerExcusasRechazadas();
+        return ResponseEntity.ok(rechazadas);
     }
 
     @DeleteMapping("/eliminar")
@@ -108,57 +82,20 @@ public class ExcusaController {
         }
     }
 
-    private ExcusaResponse convertirAExcusaResponse(Excusa excusa) {
-        return new ExcusaResponse(
-                excusa.getMotivo().toString(),
-                excusa.getEmpleado().getLegajo(),
-                excusa.getEmpleado().getNombre(),
-                excusa.getEmpleado().getEmail(),
-                excusa.getClass().getSimpleName(),
-                LocalDate.now()
-        );
-    }
-
     public static class RegistrarExcusaRequest {
         @Positive(message = "El legajo debe ser un número positivo")
-        private int legajo;
+        private Integer legajo;
 
         @NotBlank(message = "El motivo no puede estar vacío")
         private String motivo;
 
         public RegistrarExcusaRequest() {}
 
-        public int getLegajo() { return legajo; }
-        public void setLegajo(int legajo) { this.legajo = legajo; }
+        public Integer getLegajo() { return legajo; }
+        public void setLegajo(Integer legajo) { this.legajo = legajo; }
 
         public String getMotivo() { return motivo; }
         public void setMotivo(String motivo) { this.motivo = motivo; }
-    }
-
-    public static class ExcusaResponse {
-        private String motivo;
-        private int legajoEmpleado;
-        private String nombreEmpleado;
-        private String emailEmpleado;
-        private String tipoExcusa;
-        private LocalDate fecha;
-
-        public ExcusaResponse(String motivo, int legajoEmpleado, String nombreEmpleado,
-                              String emailEmpleado, String tipoExcusa, LocalDate fecha) {
-            this.motivo = motivo;
-            this.legajoEmpleado = legajoEmpleado;
-            this.nombreEmpleado = nombreEmpleado;
-            this.emailEmpleado = emailEmpleado;
-            this.tipoExcusa = tipoExcusa;
-            this.fecha = fecha;
-        }
-
-        public String getMotivo() { return motivo; }
-        public int getLegajoEmpleado() { return legajoEmpleado; }
-        public String getNombreEmpleado() { return nombreEmpleado; }
-        public String getEmailEmpleado() { return emailEmpleado; }
-        public String getTipoExcusa() { return tipoExcusa; }
-        public LocalDate getFecha() { return fecha; }
     }
 
     public static class EliminarExcusasResponse {
@@ -170,5 +107,4 @@ public class ExcusaController {
 
         public int getCantidadEliminadas() { return cantidadEliminadas; }
     }
-
 }

@@ -1,67 +1,101 @@
 package ar.edu.davinci.excusas.service;
 
+import ar.edu.davinci.excusas.dto.ExcusaDTO;
+import ar.edu.davinci.excusas.mapper.EmpleadoMapper;
+import ar.edu.davinci.excusas.mapper.ExcusaMapper;
 import ar.edu.davinci.excusas.model.empleados.Empleado;
+import ar.edu.davinci.excusas.model.entities.EmpleadoEntity;
+import ar.edu.davinci.excusas.model.entities.ExcusaEntity;
 import ar.edu.davinci.excusas.model.excusas.Excusa;
 import ar.edu.davinci.excusas.model.excusas.MotivoExcusa;
+import ar.edu.davinci.excusas.repository.EmpleadoRepository;
+import ar.edu.davinci.excusas.repository.ExcusaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class ExcusaService {
 
-    private final List<Excusa> excusas = new ArrayList<>();
+    private final ExcusaRepository excusaRepository;
+    private final EmpleadoRepository empleadoRepository;
+    private final ExcusaMapper excusaMapper;
+    private final EmpleadoMapper empleadoMapper;
     private final EmpleadoService empleadoService;
 
     @Autowired
-    public ExcusaService(EmpleadoService empleadoService) {
+    public ExcusaService(ExcusaRepository excusaRepository,
+                        EmpleadoRepository empleadoRepository,
+                        ExcusaMapper excusaMapper,
+                        EmpleadoMapper empleadoMapper,
+                        EmpleadoService empleadoService) {
+        this.excusaRepository = excusaRepository;
+        this.empleadoRepository = empleadoRepository;
+        this.excusaMapper = excusaMapper;
+        this.empleadoMapper = empleadoMapper;
         this.empleadoService = empleadoService;
     }
 
-    public Excusa registrarExcusa(int legajo, MotivoExcusa motivo) {
-        Optional<Empleado> empleadoOpt = empleadoService.obtenerEmpleadoPorLegajo(legajo);
+    public ExcusaDTO registrarExcusa(int legajo, MotivoExcusa motivo) {
+        Optional<EmpleadoEntity> empleadoEntityOpt = empleadoRepository.findById(legajo);
 
-        if (empleadoOpt.isEmpty()) {
+        if (empleadoEntityOpt.isEmpty()) {
             throw new IllegalArgumentException("No se encontró empleado con legajo: " + legajo);
         }
 
-        Empleado empleado = empleadoOpt.get();
+        EmpleadoEntity empleadoEntity = empleadoEntityOpt.get();
+        Empleado empleado = empleadoMapper.toDomainModel(empleadoEntity);
+        
+        // Generar excusa usando el modelo de dominio
         Excusa excusa = empleado.generarYEnviarExcusa(motivo, empleadoService.getLineaEncargados());
-        excusas.add(excusa);
+        
+        // Crear entidad para persistir
+        ExcusaEntity excusaEntity = new ExcusaEntity(motivo, excusa.getClass().getSimpleName(), empleadoEntity);
+        ExcusaEntity excusaGuardada = excusaRepository.save(excusaEntity);
 
-        return excusa;
+        return excusaMapper.toDTO(excusaGuardada);
     }
 
-    public List<Excusa> obtenerExcusasPorEmpleado(int legajo) {
-        return excusas.stream()
-                .filter(e -> e.getEmpleado().getLegajo() == legajo)
+    @Transactional(readOnly = true)
+    public List<ExcusaDTO> obtenerExcusasPorEmpleado(int legajo) {
+        return excusaRepository.findByEmpleadoLegajo(legajo).stream()
+                .map(excusaMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<Excusa> obtenerTodasLasExcusas(LocalDate fechaDesde, LocalDate fechaHasta, String motivo) {
-        return excusas.stream()
-                .filter(e -> fechaDesde == null || !LocalDate.now().isBefore(fechaDesde))
-                .filter(e -> fechaHasta == null || !LocalDate.now().isAfter(fechaHasta))
-                .filter(e -> motivo == null || e.getMotivo().toString().equalsIgnoreCase(motivo))
+    @Transactional(readOnly = true)
+    public List<ExcusaDTO> obtenerTodasLasExcusas(LocalDate fechaDesde, LocalDate fechaHasta, String motivo) {
+        LocalDateTime fechaDesdeTime = fechaDesde != null ? fechaDesde.atStartOfDay() : null;
+        LocalDateTime fechaHastaTime = fechaHasta != null ? fechaHasta.atTime(23, 59, 59) : null;
+        MotivoExcusa motivoEnum = motivo != null ? MotivoExcusa.valueOf(motivo.toUpperCase()) : null;
+        
+        return excusaRepository.findByFiltros(fechaDesdeTime, fechaHastaTime, motivoEnum).stream()
+                .map(excusaMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<Excusa> buscarExcusas(int legajo, LocalDate fechaDesde, LocalDate fechaHasta) {
-        return excusas.stream()
-                .filter(e -> e.getEmpleado().getLegajo() == legajo)
-                .filter(e -> fechaDesde == null || !LocalDate.now().isBefore(fechaDesde))
-                .filter(e -> fechaHasta == null || !LocalDate.now().isAfter(fechaHasta))
+    @Transactional(readOnly = true)
+    public List<ExcusaDTO> buscarExcusas(int legajo, LocalDate fechaDesde, LocalDate fechaHasta) {
+        LocalDateTime fechaDesdeTime = fechaDesde != null ? fechaDesde.atStartOfDay() : null;
+        LocalDateTime fechaHastaTime = fechaHasta != null ? fechaHasta.atTime(23, 59, 59) : null;
+        
+        return excusaRepository.findByEmpleadoAndFechas(legajo, fechaDesdeTime, fechaHastaTime).stream()
+                .map(excusaMapper::toDTO)
                 .collect(Collectors.toList());
     }
 
-    public List<Excusa> obtenerExcusasRechazadas() {
-        // Por ahora retorna lista vacía, se puede implementar lógica específica
-        return new ArrayList<>();
+    @Transactional(readOnly = true)
+    public List<ExcusaDTO> obtenerExcusasRechazadas() {
+        return excusaRepository.findByAceptada(false).stream()
+                .map(excusaMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     public int eliminarExcusas(LocalDate fechaLimite) {
@@ -69,20 +103,22 @@ public class ExcusaService {
             throw new IllegalArgumentException("La fecha límite no puede ser nula");
         }
 
-        int cantidadEliminadas = (int) excusas.stream()
-                .filter(e -> LocalDate.now().isBefore(fechaLimite))
-                .count();
+        LocalDateTime fechaLimiteTime = fechaLimite.atStartOfDay();
+        long cantidadEliminadas = excusaRepository.countByFechaCreacionBefore(fechaLimiteTime);
+        
+        excusaRepository.deleteByFechaCreacionBefore(fechaLimiteTime);
 
-        excusas.removeIf(e -> LocalDate.now().isBefore(fechaLimite));
-
-        return cantidadEliminadas;
+        return (int) cantidadEliminadas;
     }
 
-    public List<Excusa> obtenerTodasLasExcusas() {
-        return new ArrayList<>(excusas);
+    @Transactional(readOnly = true)
+    public List<ExcusaDTO> obtenerTodasLasExcusas() {
+        return excusaRepository.findAll().stream()
+                .map(excusaMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     public void clearExcusas() {
-        excusas.clear();
+        excusaRepository.deleteAll();
     }
 }
