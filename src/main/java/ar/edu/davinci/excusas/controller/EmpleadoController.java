@@ -1,108 +1,105 @@
 package ar.edu.davinci.excusas.controller;
 
 import ar.edu.davinci.excusas.dto.EmpleadoDTO;
-import ar.edu.davinci.excusas.dto.ExcusaDTO;
-import ar.edu.davinci.excusas.model.excusas.MotivoExcusa;
 import ar.edu.davinci.excusas.service.EmpleadoService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Positive;
 
 import java.util.List;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/empleados")
+@CrossOrigin(origins = "*")
 public class EmpleadoController {
-
-    private final EmpleadoService empleadoService;
-
+    
     @Autowired
-    public EmpleadoController(EmpleadoService empleadoService) {
-        this.empleadoService = empleadoService;
-    }
-
+    private EmpleadoService empleadoService;
+    
     @GetMapping
     public ResponseEntity<List<EmpleadoDTO>> obtenerTodosLosEmpleados() {
-        List<EmpleadoDTO> empleados = empleadoService.obtenerTodosLosEmpleados();
-        return ResponseEntity.ok(empleados);
+        try {
+            List<EmpleadoDTO> empleados = empleadoService.obtenerTodosLosEmpleados();
+            return ResponseEntity.ok(empleados);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
-
+    
     @GetMapping("/{legajo}")
-    public ResponseEntity<EmpleadoDTO> obtenerEmpleadoPorLegajo(@PathVariable int legajo) {
-        Optional<EmpleadoDTO> empleado = empleadoService.obtenerEmpleadoPorLegajo(legajo);
-        return empleado.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<EmpleadoDTO> obtenerEmpleadoPorLegajo(@PathVariable Integer legajo) {
+        try {
+            Optional<EmpleadoDTO> empleado = empleadoService.obtenerEmpleadoPorLegajo(legajo);
+            return empleado.map(ResponseEntity::ok)
+                          .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
-
+    
     @PostMapping
-    public ResponseEntity<EmpleadoDTO> crearEmpleado(@Valid @RequestBody EmpleadoRequest request) {
+    public ResponseEntity<EmpleadoDTO> crearEmpleado(@Valid @RequestBody EmpleadoDTO empleadoDTO) {
         try {
-            EmpleadoDTO nuevoEmpleado = empleadoService.crearEmpleado(
-                    request.getNombre(),
-                    request.getEmail(),
-                    request.getLegajo()
-            );
-            return ResponseEntity.ok(nuevoEmpleado);
+            EmpleadoDTO nuevoEmpleado = empleadoService.crearEmpleado(empleadoDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoEmpleado);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-    @PostMapping("/{legajo}/excusas/{motivo}")
-    public ResponseEntity<ExcusaDTO> generarExcusa(
-            @PathVariable int legajo,
-            @PathVariable String motivo) {
-
-        if (motivo == null || motivo.trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
-
+    
+    @PutMapping("/{legajo}")
+    public ResponseEntity<EmpleadoDTO> actualizarEmpleado(@PathVariable Integer legajo, 
+                                                         @Valid @RequestBody EmpleadoDTO empleadoDTO) {
         try {
-            MotivoExcusa motivoEnum = MotivoExcusa.valueOf(motivo.toUpperCase());
-            ExcusaDTO excusa = empleadoService.generarExcusa(legajo, motivoEnum);
-            return ResponseEntity.ok(excusa);
+            EmpleadoDTO empleadoActualizado = empleadoService.actualizarEmpleado(legajo, empleadoDTO);
+            return ResponseEntity.ok(empleadoActualizado);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
+    
     @DeleteMapping("/{legajo}")
-    public ResponseEntity<Void> eliminarEmpleado(@PathVariable int legajo) {
-        boolean eliminado = empleadoService.eliminarEmpleado(legajo);
-
-        if (eliminado) {
-            return ResponseEntity.ok().build();
-        } else {
+    public ResponseEntity<Void> eliminarEmpleado(@PathVariable Integer legajo) {
+        try {
+            empleadoService.eliminarEmpleado(legajo);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
+    
+    @GetMapping("/buscar")
+    public ResponseEntity<List<EmpleadoDTO>> buscarEmpleadosPorNombre(@RequestParam String nombre) {
+        try {
+            List<EmpleadoDTO> empleados = empleadoService.buscarEmpleadosPorNombre(nombre);
+            return ResponseEntity.ok(empleados);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    
     public static class EmpleadoRequest {
-        @NotBlank(message = "El nombre no puede estar vacío")
-        private String nombre;
-
-        @NotBlank(message = "El email no puede estar vacío")
-        @Email(message = "El email debe tener un formato válido")
-        private String email;
-
-        @Positive(message = "El legajo debe ser un número positivo")
         private Integer legajo;
-
-        public EmpleadoRequest() {}
-
-        public String getNombre() { return nombre; }
-        public void setNombre(String nombre) { this.nombre = nombre; }
-
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
-
+        private String nombre;
+        private String email;
+        
+        // Getters y Setters
         public Integer getLegajo() { return legajo; }
         public void setLegajo(Integer legajo) { this.legajo = legajo; }
+        
+        public String getNombre() { return nombre; }
+        public void setNombre(String nombre) { this.nombre = nombre; }
+        
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
     }
 }

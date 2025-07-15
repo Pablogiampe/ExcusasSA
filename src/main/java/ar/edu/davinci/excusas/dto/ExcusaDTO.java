@@ -1,50 +1,56 @@
 package ar.edu.davinci.excusas.dto;
 
+import ar.edu.davinci.excusas.model.excusas.MotivoExcusa;
+import jakarta.validation.constraints.NotNull;
+
 import java.time.LocalDateTime;
 
 public class ExcusaDTO {
     
     private Long id;
-    private String motivo;
-    private Integer legajoEmpleado;
-    private String nombreEmpleado;
-    private String emailEmpleado;
+    
+    @NotNull(message = "El motivo no puede ser nulo")
+    private MotivoExcusa motivo;
+    
+    @NotNull(message = "El tipo de excusa no puede ser nulo")
     private String tipoExcusa;
+    
+    @NotNull(message = "La fecha de creación no puede ser nula")
     private LocalDateTime fechaCreacion;
+    
     private Boolean aceptada;
+    
     private String encargadoQueManejo;
+    
+    @NotNull(message = "El legajo del empleado no puede ser nulo")
+    private Integer empleadoLegajo;
+    
+    private String empleadoNombre;
+    
+    private String empleadoEmail;
     
     public ExcusaDTO() {}
     
-    public ExcusaDTO(Long id, String motivo, Integer legajoEmpleado, String nombreEmpleado, 
-                     String emailEmpleado, String tipoExcusa, LocalDateTime fechaCreacion,
-                     Boolean aceptada, String encargadoQueManejo) {
+    public ExcusaDTO(Long id, MotivoExcusa motivo, String tipoExcusa, LocalDateTime fechaCreacion, 
+                     Boolean aceptada, String encargadoQueManejo, Integer empleadoLegajo, 
+                     String empleadoNombre, String empleadoEmail) {
         this.id = id;
         this.motivo = motivo;
-        this.legajoEmpleado = legajoEmpleado;
-        this.nombreEmpleado = nombreEmpleado;
-        this.emailEmpleado = emailEmpleado;
         this.tipoExcusa = tipoExcusa;
         this.fechaCreacion = fechaCreacion;
         this.aceptada = aceptada;
         this.encargadoQueManejo = encargadoQueManejo;
+        this.empleadoLegajo = empleadoLegajo;
+        this.empleadoNombre = empleadoNombre;
+        this.empleadoEmail = empleadoEmail;
     }
     
     // Getters y Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     
-    public String getMotivo() { return motivo; }
-    public void setMotivo(String motivo) { this.motivo = motivo; }
-    
-    public Integer getLegajoEmpleado() { return legajoEmpleado; }
-    public void setLegajoEmpleado(Integer legajoEmpleado) { this.legajoEmpleado = legajoEmpleado; }
-    
-    public String getNombreEmpleado() { return nombreEmpleado; }
-    public void setNombreEmpleado(String nombreEmpleado) { this.nombreEmpleado = nombreEmpleado; }
-    
-    public String getEmailEmpleado() { return emailEmpleado; }
-    public void setEmailEmpleado(String emailEmpleado) { this.emailEmpleado = emailEmpleado; }
+    public MotivoExcusa getMotivo() { return motivo; }
+    public void setMotivo(MotivoExcusa motivo) { this.motivo = motivo; }
     
     public String getTipoExcusa() { return tipoExcusa; }
     public void setTipoExcusa(String tipoExcusa) { this.tipoExcusa = tipoExcusa; }
@@ -57,4 +63,28 @@ public class ExcusaDTO {
     
     public String getEncargadoQueManejo() { return encargadoQueManejo; }
     public void setEncargadoQueManejo(String encargadoQueManejo) { this.encargadoQueManejo = encargadoQueManejo; }
+    
+    public Integer getEmpleadoLegajo() { return empleadoLegajo; }
+    public void setEmpleadoLegajo(Integer empleadoLegajo) { this.empleadoLegajo = empleadoLegajo; }
+    
+    public String getEmpleadoNombre() { return empleadoNombre; }
+    public void setEmpleadoNombre(String empleadoNombre) { this.empleadoNombre = empleadoNombre; }
+    
+    public String getEmpleadoEmail() { return empleadoEmail; }
+    public void setEmpleadoEmail(String empleadoEmail) { this.empleadoEmail = empleadoEmail; }
+    
+    @Override
+    public String toString() {
+        return "ExcusaDTO{" +
+                "id=" + id +
+                ", motivo=" + motivo +
+                ", tipoExcusa='" + tipoExcusa + '\'' +
+                ", fechaCreacion=" + fechaCreacion +
+                ", aceptada=" + aceptada +
+                ", encargadoQueManejo='" + encargadoQueManejo + '\'' +
+                ", empleadoLegajo=" + empleadoLegajo +
+                ", empleadoNombre='" + empleadoNombre + '\'' +
+                ", empleadoEmail='" + empleadoEmail + '\'' +
+                '}';
+    }
 }

@@ -47,4 +47,15 @@ public class EncargadoDTO {
     
     public String getModo() { return modo; }
     public void setModo(String modo) { this.modo = modo; }
+    
+    @Override
+    public String toString() {
+        return "EncargadoDTO{" +
+                "legajo=" + legajo +
+                ", nombre='" + nombre + '\'' +
+                ", email='" + email + '\'' +
+                ", tipoEncargado='" + tipoEncargado + '\'' +
+                ", modo='" + modo + '\'' +
+                '}';
+    }
 }

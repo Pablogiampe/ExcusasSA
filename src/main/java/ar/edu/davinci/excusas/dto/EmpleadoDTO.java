@@ -33,4 +33,13 @@ public class EmpleadoDTO {
     
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    
+    @Override
+    public String toString() {
+        return "EmpleadoDTO{" +
+                "legajo=" + legajo +
+                ", nombre='" + nombre + '\'' +
+                ", email='" + email + '\'' +
+                '}';
+    }
 }

@@ -3,6 +3,7 @@ package ar.edu.davinci.excusas.repository;
 import ar.edu.davinci.excusas.model.entities.ExcusaEntity;
 import ar.edu.davinci.excusas.model.excusas.MotivoExcusa;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -19,23 +20,21 @@ public interface ExcusaRepository extends JpaRepository<ExcusaEntity, Long> {
     
     List<ExcusaEntity> findByMotivo(MotivoExcusa motivo);
     
-    @Query("SELECT e FROM ExcusaEntity e WHERE " +
-           "(:fechaDesde IS NULL OR e.fechaCreacion >= :fechaDesde) AND " +
-           "(:fechaHasta IS NULL OR e.fechaCreacion <= :fechaHasta) AND " +
-           "(:motivo IS NULL OR e.motivo = :motivo)")
-    List<ExcusaEntity> findByFiltros(@Param("fechaDesde") LocalDateTime fechaDesde,
-                                     @Param("fechaHasta") LocalDateTime fechaHasta,
-                                     @Param("motivo") MotivoExcusa motivo);
+    List<ExcusaEntity> findByEncargadoQueManejo(String encargado);
     
-    @Query("SELECT e FROM ExcusaEntity e WHERE e.empleado.legajo = :legajo AND " +
-           "(:fechaDesde IS NULL OR e.fechaCreacion >= :fechaDesde) AND " +
-           "(:fechaHasta IS NULL OR e.fechaCreacion <= :fechaHasta)")
-    List<ExcusaEntity> findByEmpleadoAndFechas(@Param("legajo") Integer legajo,
-                                               @Param("fechaDesde") LocalDateTime fechaDesde,
-                                               @Param("fechaHasta") LocalDateTime fechaHasta);
+    @Query("SELECT e FROM ExcusaEntity e WHERE e.fechaCreacion BETWEEN :fechaDesde AND :fechaHasta")
+    List<ExcusaEntity> findByFechaCreacionBetween(@Param("fechaDesde") LocalDateTime fechaDesde, 
+                                                  @Param("fechaHasta") LocalDateTime fechaHasta);
+    
+    @Query("SELECT e FROM ExcusaEntity e WHERE e.empleado.legajo = :legajo AND e.fechaCreacion BETWEEN :fechaDesde AND :fechaHasta")
+    List<ExcusaEntity> findByEmpleadoLegajoAndFechaCreacionBetween(@Param("legajo") Integer legajo,
+                                                                   @Param("fechaDesde") LocalDateTime fechaDesde,
+                                                                   @Param("fechaHasta") LocalDateTime fechaHasta);
+    
+    @Modifying
+    @Query("DELETE FROM ExcusaEntity e WHERE e.fechaCreacion < :fechaLimite")
+    int deleteByFechaCreacionBefore(@Param("fechaLimite") LocalDateTime fechaLimite);
     
     @Query("SELECT COUNT(e) FROM ExcusaEntity e WHERE e.fechaCreacion < :fechaLimite")
     long countByFechaCreacionBefore(@Param("fechaLimite") LocalDateTime fechaLimite);
-    
-    void deleteByFechaCreacionBefore(LocalDateTime fechaLimite);
 }

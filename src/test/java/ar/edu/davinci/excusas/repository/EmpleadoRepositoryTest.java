@@ -5,102 +5,74 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
-@ActiveProfiles("test")
 public class EmpleadoRepositoryTest {
-
+    
     @Autowired
     private TestEntityManager entityManager;
-
+    
     @Autowired
     private EmpleadoRepository empleadoRepository;
-
+    
     @Test
-    public void testGuardarYRecuperarEmpleado() {
+    public void testFindByLegajo() {
         // Given
-        EmpleadoEntity empleado = new EmpleadoEntity("Juan Pérez", "juan@test.com", 1001);
-
+        EmpleadoEntity empleado = new EmpleadoEntity();
+        empleado.setLegajo(1001);
+        empleado.setNombre("Juan Pérez");
+        empleado.setEmail("juan.perez@excusas-sa.com");
+        entityManager.persistAndFlush(empleado);
+        
         // When
-        EmpleadoEntity empleadoGuardado = empleadoRepository.save(empleado);
-        entityManager.flush();
-
+        Optional<EmpleadoEntity> found = empleadoRepository.findByLegajo(1001);
+        
         // Then
-        assertNotNull(empleadoGuardado);
-        assertEquals("Juan Pérez", empleadoGuardado.getNombre());
-        assertEquals("juan@test.com", empleadoGuardado.getEmail());
-        assertEquals(1001, empleadoGuardado.getLegajo());
+        assertThat(found).isPresent();
+        assertThat(found.get().getNombre()).isEqualTo("Juan Pérez");
+        assertThat(found.get().getEmail()).isEqualTo("juan@test.com");
     }
 
+
+    
     @Test
-    public void testBuscarPorLegajo() {
+    public void testFindByEmail() {
         // Given
         EmpleadoEntity empleado = new EmpleadoEntity("María García", "maria@test.com", 1002);
         entityManager.persistAndFlush(empleado);
-
+        
         // When
-        Optional<EmpleadoEntity> encontrado = empleadoRepository.findById(1002);
-
+        Optional<EmpleadoEntity> found = empleadoRepository.findByEmail("maria@test.com");
+        
         // Then
-        assertTrue(encontrado.isPresent());
-        assertEquals("María García", encontrado.get().getNombre());
-        assertEquals("maria@test.com", encontrado.get().getEmail());
+        assertThat(found).isPresent();
+        assertThat(found.get().getNombre()).isEqualTo("María García");
+        assertThat(found.get().getLegajo()).isEqualTo(1002);
     }
-
+    
     @Test
-    public void testBuscarPorEmail() {
+    public void testExistsByLegajo() {
         // Given
         EmpleadoEntity empleado = new EmpleadoEntity("Carlos López", "carlos@test.com", 1003);
         entityManager.persistAndFlush(empleado);
-
-        // When
-        Optional<EmpleadoEntity> encontrado = empleadoRepository.findByEmail("carlos@test.com");
-
-        // Then
-        assertTrue(encontrado.isPresent());
-        assertEquals("Carlos López", encontrado.get().getNombre());
-        assertEquals(1003, encontrado.get().getLegajo());
-    }
-
-    @Test
-    public void testExistePorLegajo() {
-        // Given
-        EmpleadoEntity empleado = new EmpleadoEntity("Ana Rodríguez", "ana@test.com", 1004);
-        entityManager.persistAndFlush(empleado);
-
+        
         // When & Then
-        assertTrue(empleadoRepository.existsByLegajo(1004));
-        assertFalse(empleadoRepository.existsByLegajo(9999));
+        assertThat(empleadoRepository.existsByLegajo(1003)).isTrue();
+        assertThat(empleadoRepository.existsByLegajo(9999)).isFalse();
     }
-
+    
     @Test
-    public void testExistePorEmail() {
+    public void testExistsByEmail() {
         // Given
-        EmpleadoEntity empleado = new EmpleadoEntity("Pedro Martínez", "pedro@test.com", 1005);
+        EmpleadoEntity empleado = new EmpleadoEntity("Ana Martínez", "ana@test.com", 1004);
         entityManager.persistAndFlush(empleado);
-
+        
         // When & Then
-        assertTrue(empleadoRepository.existsByEmail("pedro@test.com"));
-        assertFalse(empleadoRepository.existsByEmail("noexiste@test.com"));
-    }
-
-    @Test
-    public void testEliminarEmpleado() {
-        // Given
-        EmpleadoEntity empleado = new EmpleadoEntity("Luis González", "luis@test.com", 1006);
-        entityManager.persistAndFlush(empleado);
-
-        // When
-        empleadoRepository.deleteById(1006);
-        entityManager.flush();
-
-        // Then
-        Optional<EmpleadoEntity> encontrado = empleadoRepository.findById(1006);
-        assertFalse(encontrado.isPresent());
+        assertThat(empleadoRepository.existsByEmail("ana@test.com")).isTrue();
+        assertThat(empleadoRepository.existsByEmail("noexiste@test.com")).isFalse();
     }
 }

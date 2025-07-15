@@ -13,24 +13,28 @@ public class ProntuarioEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @NotNull
-    @Column(nullable = false)
+    @NotNull(message = "La fecha de creación no puede ser nula")
+    @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "empleado_legajo", nullable = false)
+    @JoinColumn(name = "empleado_legajo", referencedColumnName = "legajo")
+    @NotNull(message = "El empleado no puede ser nulo")
     private EmpleadoEntity empleado;
     
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "excusa_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "excusa_id")
+    @NotNull(message = "La excusa no puede ser nula")
     private ExcusaEntity excusa;
     
-    public ProntuarioEntity() {}
+    public ProntuarioEntity() {
+        this.fechaCreacion = LocalDateTime.now();
+    }
     
     public ProntuarioEntity(EmpleadoEntity empleado, ExcusaEntity excusa) {
+        this();
         this.empleado = empleado;
         this.excusa = excusa;
-        this.fechaCreacion = LocalDateTime.now();
     }
     
     // Getters y Setters
@@ -45,4 +49,12 @@ public class ProntuarioEntity {
     
     public ExcusaEntity getExcusa() { return excusa; }
     public void setExcusa(ExcusaEntity excusa) { this.excusa = excusa; }
+    
+    @Override
+    public String toString() {
+        return "ProntuarioEntity{" +
+                "id=" + id +
+                ", fechaCreacion=" + fechaCreacion +
+                '}';
+    }
 }

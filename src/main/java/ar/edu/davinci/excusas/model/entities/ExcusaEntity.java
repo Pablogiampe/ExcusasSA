@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "excusas")
@@ -14,39 +16,42 @@ public class ExcusaEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @NotNull(message = "El motivo no puede ser nulo")
+    @Column(name = "motivo", nullable = false)
     private MotivoExcusa motivo;
     
-    @NotNull
-    @Column(nullable = false)
+    @NotNull(message = "El tipo de excusa no puede ser nulo")
+    @Column(name = "tipo_excusa", nullable = false)
     private String tipoExcusa;
     
-    @NotNull
-    @Column(nullable = false)
+    @NotNull(message = "La fecha de creación no puede ser nula")
+    @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;
     
-    @Column
+    @Column(name = "aceptada")
     private Boolean aceptada;
     
-    @Column
+    @Column(name = "encargado_que_manejo")
     private String encargadoQueManejo;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "empleado_legajo", nullable = false)
+    @JoinColumn(name = "empleado_legajo", referencedColumnName = "legajo")
+    @NotNull(message = "El empleado no puede ser nulo")
     private EmpleadoEntity empleado;
     
-    @OneToOne(mappedBy = "excusa", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private ProntuarioEntity prontuario;
+    @OneToMany(mappedBy = "excusa", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ProntuarioEntity> prontuarios = new ArrayList<>();
     
-    public ExcusaEntity() {}
+    public ExcusaEntity() {
+        this.fechaCreacion = LocalDateTime.now();
+    }
     
     public ExcusaEntity(MotivoExcusa motivo, String tipoExcusa, EmpleadoEntity empleado) {
+        this();
         this.motivo = motivo;
         this.tipoExcusa = tipoExcusa;
         this.empleado = empleado;
-        this.fechaCreacion = LocalDateTime.now();
     }
     
     // Getters y Setters
@@ -71,6 +76,18 @@ public class ExcusaEntity {
     public EmpleadoEntity getEmpleado() { return empleado; }
     public void setEmpleado(EmpleadoEntity empleado) { this.empleado = empleado; }
     
-    public ProntuarioEntity getProntuario() { return prontuario; }
-    public void setProntuario(ProntuarioEntity prontuario) { this.prontuario = prontuario; }
+    public List<ProntuarioEntity> getProntuarios() { return prontuarios; }
+    public void setProntuarios(List<ProntuarioEntity> prontuarios) { this.prontuarios = prontuarios; }
+    
+    @Override
+    public String toString() {
+        return "ExcusaEntity{" +
+                "id=" + id +
+                ", motivo=" + motivo +
+                ", tipoExcusa='" + tipoExcusa + '\'' +
+                ", fechaCreacion=" + fechaCreacion +
+                ", aceptada=" + aceptada +
+                ", encargadoQueManejo='" + encargadoQueManejo + '\'' +
+                '}';
+    }
 }

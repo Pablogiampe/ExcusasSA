@@ -13,16 +13,17 @@ import java.util.List;
 public class EmpleadoEntity {
     
     @Id
-    @Positive
+    @Positive(message = "El legajo debe ser un número positivo")
+    @Column(name = "legajo", unique = true, nullable = false)
     private Integer legajo;
     
-    @NotBlank
-    @Column(nullable = false)
+    @NotBlank(message = "El nombre no puede estar vacío")
+    @Column(name = "nombre", nullable = false)
     private String nombre;
     
-    @NotBlank
-    @Email
-    @Column(nullable = false, unique = true)
+    @NotBlank(message = "El email no puede estar vacío")
+    @Email(message = "El email debe tener un formato válido")
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
     
     @OneToMany(mappedBy = "empleado", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -54,4 +55,13 @@ public class EmpleadoEntity {
     
     public List<ProntuarioEntity> getProntuarios() { return prontuarios; }
     public void setProntuarios(List<ProntuarioEntity> prontuarios) { this.prontuarios = prontuarios; }
+    
+    @Override
+    public String toString() {
+        return "EmpleadoEntity{" +
+                "legajo=" + legajo +
+                ", nombre='" + nombre + '\'' +
+                ", email='" + email + '\'' +
+                '}';
+    }
 }
