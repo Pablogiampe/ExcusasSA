@@ -12,67 +12,67 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 public class EmpleadoRepositoryTest {
-    
+
     @Autowired
     private TestEntityManager entityManager;
-    
+
     @Autowired
     private EmpleadoRepository empleadoRepository;
-    
+
     @Test
     public void testFindByLegajo() {
         // Given
         EmpleadoEntity empleado = new EmpleadoEntity();
-        empleado.setLegajo(1001);
-        empleado.setNombre("Juan Pérez");
-        empleado.setEmail("juan.perez@excusas-sa.com");
+        empleado.setLegajo(9001);
+        empleado.setNombre("Juan Pérez Test");
+        empleado.setEmail("juan.perez.test@excusas-sa.com");
         entityManager.persistAndFlush(empleado);
-        
+
         // When
-        Optional<EmpleadoEntity> found = empleadoRepository.findByLegajo(1001);
-        
+        Optional<EmpleadoEntity> found = empleadoRepository.findByLegajo(9001);
+
         // Then
         assertThat(found).isPresent();
-        assertThat(found.get().getNombre()).isEqualTo("Juan Pérez");
-        assertThat(found.get().getEmail()).isEqualTo("juan@test.com");
+        assertThat(found.get().getNombre()).isEqualTo("Juan Pérez Test");
+        assertThat(found.get().getEmail()).isEqualTo("juan.perez.test@excusas-sa.com");
     }
 
 
-    
+
     @Test
     public void testFindByEmail() {
         // Given
-        EmpleadoEntity empleado = new EmpleadoEntity("María García", "maria@test.com", 1002);
+        EmpleadoEntity empleado = new EmpleadoEntity("María García Test", "maria.test@excusas-sa.com", 9002);
         entityManager.persistAndFlush(empleado);
-        
+
         // When
-        Optional<EmpleadoEntity> found = empleadoRepository.findByEmail("maria@test.com");
-        
+        Optional<EmpleadoEntity> found = empleadoRepository.findByEmail("maria.test@excusas-sa.com");
+
         // Then
         assertThat(found).isPresent();
-        assertThat(found.get().getNombre()).isEqualTo("María García");
-        assertThat(found.get().getLegajo()).isEqualTo(1002);
+        assertThat(found.get().getNombre()).isEqualTo("María García Test");
+        assertThat(found.get().getLegajo()).isEqualTo(9002);
     }
-    
+
     @Test
     public void testExistsByLegajo() {
         // Given
-        EmpleadoEntity empleado = new EmpleadoEntity("Carlos López", "carlos@test.com", 1003);
+        EmpleadoEntity empleado = new EmpleadoEntity("Carlos López Test", "carlos.test@excusas-sa.com", 9003);
         entityManager.persistAndFlush(empleado);
-        
+
         // When & Then
-        assertThat(empleadoRepository.existsByLegajo(1003)).isTrue();
+        assertThat(empleadoRepository.existsByLegajo(9003)).isTrue();
         assertThat(empleadoRepository.existsByLegajo(9999)).isFalse();
     }
-    
+
     @Test
     public void testExistsByEmail() {
         // Given
-        EmpleadoEntity empleado = new EmpleadoEntity("Ana Martínez", "ana@test.com", 1004);
+        EmpleadoEntity empleado = new EmpleadoEntity("Ana Martínez Test", "ana.test@excusas-sa.com", 9004);
         entityManager.persistAndFlush(empleado);
-        
+
         // When & Then
-        assertThat(empleadoRepository.existsByEmail("ana@test.com")).isTrue();
+        assertThat(empleadoRepository.existsByEmail("ana.test@excusas-sa.com")).isTrue();
         assertThat(empleadoRepository.existsByEmail("noexiste@test.com")).isFalse();
     }
 }
