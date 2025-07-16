@@ -3,15 +3,17 @@ package ar.edu.davinci.excusas.model.prontuario;
 import ar.edu.davinci.excusas.model.empleados.Empleado;
 import ar.edu.davinci.excusas.model.excusas.Excusa;
 
-public class Prontuario {
-    private Empleado empleado;
-    private Excusa excusa;
-    private int numeroLegajo;
+import java.time.LocalDateTime;
 
-    public Prontuario(Empleado empleado, Excusa excusa, int numeroLegajo) {
+public class Prontuario {
+    private final Empleado empleado;
+    private final Excusa excusa;
+    private final LocalDateTime fechaCreacion;
+
+    public Prontuario(Empleado empleado, Excusa excusa) {
         this.empleado = empleado;
         this.excusa = excusa;
-        this.numeroLegajo = numeroLegajo;
+        this.fechaCreacion = LocalDateTime.now();
     }
 
     public Empleado getEmpleado() {
@@ -22,16 +24,16 @@ public class Prontuario {
         return excusa;
     }
 
-    public int getNumeroLegajo() {
-        return numeroLegajo;
+    public LocalDateTime getFechaCreacion() {
+        return fechaCreacion;
     }
 
     @Override
     public String toString() {
         return "Prontuario{" +
-                "empleado=" + empleado +
+                "empleado=" + empleado.getNombre() +
                 ", excusa=" + excusa.getClass().getSimpleName() +
-                ", numeroLegajo=" + numeroLegajo +
+                ", fechaCreacion=" + fechaCreacion +
                 '}';
     }
 }

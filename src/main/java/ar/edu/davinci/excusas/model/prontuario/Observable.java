@@ -13,7 +13,7 @@ public abstract class Observable {
         }
     }
 
-    public void quitarObserver(Observer observer) {
+    public void removerObserver(Observer observer) {
         observers.remove(observer);
     }
 

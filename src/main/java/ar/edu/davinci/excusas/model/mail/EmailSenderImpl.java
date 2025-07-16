@@ -1,22 +1,18 @@
 package ar.edu.davinci.excusas.model.mail;
 
-import ar.edu.davinci.excusas.model.excepciones.ErrorProcesamiento;
+import org.springframework.stereotype.Component;
 
+@Component
 public class EmailSenderImpl implements EmailSender {
 
     @Override
-    public void enviarEmail(String emailDestino, String emailOrigen, String asunto, String cuerpo) {
-
-        try {
-            System.out.println("=== EMAIL ENVIADO ===");
-            System.out.println("De: " + emailOrigen);
-            System.out.println("Para: " + emailDestino);
-            System.out.println("Asunto: " + asunto);
-            System.out.println("Cuerpo: " + cuerpo);
-            System.out.println("====================");
-        } catch (Exception e) {
-            throw new ErrorProcesamiento("Error al enviar el email", e);
-        }
+    public void enviarEmail(String destinatario, String remitente, String asunto, String cuerpo) {
+        // Simulación de envío de email
+        System.out.println("=== EMAIL ENVIADO ===");
+        System.out.println("De: " + remitente);
+        System.out.println("Para: " + destinatario);
+        System.out.println("Asunto: " + asunto);
+        System.out.println("Cuerpo: " + cuerpo);
+        System.out.println("====================");
     }
-
 }

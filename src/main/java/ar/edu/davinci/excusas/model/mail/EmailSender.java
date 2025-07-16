@@ -1,5 +1,5 @@
 package ar.edu.davinci.excusas.model.mail;
 
 public interface EmailSender {
-    void enviarEmail(String emailDestino, String emailOrigen, String asunto, String cuerpo);
+    void enviarEmail(String destinatario, String remitente, String asunto, String cuerpo);
 }
