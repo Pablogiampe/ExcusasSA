@@ -14,7 +14,7 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-    
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ErrorResponse> handleIllegalArgumentException(IllegalArgumentException ex) {
@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.badRequest().body(error);
     }
-    
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ValidationErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
@@ -36,17 +36,17 @@ public class GlobalExceptionHandler {
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
         });
-        
+
         ValidationErrorResponse errorResponse = new ValidationErrorResponse(
             HttpStatus.BAD_REQUEST.value(),
             "Validation Failed",
             errors,
             LocalDateTime.now()
         );
-        
+
         return ResponseEntity.badRequest().body(errorResponse);
     }
-    
+
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
@@ -58,57 +58,55 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
-    
+
     public static class ErrorResponse {
         private int status;
         private String error;
         private String message;
         private LocalDateTime timestamp;
-        
+
         public ErrorResponse(int status, String error, String message, LocalDateTime timestamp) {
             this.status = status;
             this.error = error;
             this.message = message;
             this.timestamp = timestamp;
         }
-        
-        // Getters y Setters
+
         public int getStatus() { return status; }
         public void setStatus(int status) { this.status = status; }
-        
+
         public String getError() { return error; }
         public void setError(String error) { this.error = error; }
-        
+
         public String getMessage() { return message; }
         public void setMessage(String message) { this.message = message; }
-        
+
         public LocalDateTime getTimestamp() { return timestamp; }
         public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     }
-    
+
     public static class ValidationErrorResponse {
         private int status;
         private String error;
         private Map<String, String> validationErrors;
         private LocalDateTime timestamp;
-        
+
         public ValidationErrorResponse(int status, String error, Map<String, String> validationErrors, LocalDateTime timestamp) {
             this.status = status;
             this.error = error;
             this.validationErrors = validationErrors;
             this.timestamp = timestamp;
         }
-        
-        // Getters y Setters
+
         public int getStatus() { return status; }
         public void setStatus(int status) { this.status = status; }
-        
+
         public String getError() { return error; }
         public void setError(String error) { this.error = error; }
-        
+
         public Map<String, String> getValidationErrors() { return validationErrors; }
         public void setValidationErrors(Map<String, String> validationErrors) { this.validationErrors = validationErrors; }
-        
+
         public LocalDateTime getTimestamp() { return timestamp; }
         public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
     }

@@ -15,10 +15,10 @@ import java.util.Optional;
 @RequestMapping("/empleados")
 @CrossOrigin(origins = "*")
 public class EmpleadoController {
-    
+
     @Autowired
     private EmpleadoService empleadoService;
-    
+
     @GetMapping
     public ResponseEntity<List<EmpleadoDTO>> obtenerTodosLosEmpleados() {
         try {
@@ -28,7 +28,7 @@ public class EmpleadoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @GetMapping("/{legajo}")
     public ResponseEntity<EmpleadoDTO> obtenerEmpleadoPorLegajo(@PathVariable Integer legajo) {
         try {
@@ -39,7 +39,7 @@ public class EmpleadoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @PostMapping
     public ResponseEntity<EmpleadoDTO> crearEmpleado(@Valid @RequestBody EmpleadoDTO empleadoDTO) {
         try {
@@ -51,9 +51,9 @@ public class EmpleadoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @PutMapping("/{legajo}")
-    public ResponseEntity<EmpleadoDTO> actualizarEmpleado(@PathVariable Integer legajo, 
+    public ResponseEntity<EmpleadoDTO> actualizarEmpleado(@PathVariable Integer legajo,
                                                          @Valid @RequestBody EmpleadoDTO empleadoDTO) {
         try {
             EmpleadoDTO empleadoActualizado = empleadoService.actualizarEmpleado(legajo, empleadoDTO);
@@ -64,7 +64,7 @@ public class EmpleadoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @DeleteMapping("/{legajo}")
     public ResponseEntity<Void> eliminarEmpleado(@PathVariable Integer legajo) {
         try {
@@ -76,7 +76,7 @@ public class EmpleadoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @GetMapping("/buscar")
     public ResponseEntity<List<EmpleadoDTO>> buscarEmpleadosPorNombre(@RequestParam String nombre) {
         try {
@@ -86,19 +86,18 @@ public class EmpleadoController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     public static class EmpleadoRequest {
         private Integer legajo;
         private String nombre;
         private String email;
-        
-        // Getters y Setters
+
         public Integer getLegajo() { return legajo; }
         public void setLegajo(Integer legajo) { this.legajo = legajo; }
-        
+
         public String getNombre() { return nombre; }
         public void setNombre(String nombre) { this.nombre = nombre; }
-        
+
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
     }

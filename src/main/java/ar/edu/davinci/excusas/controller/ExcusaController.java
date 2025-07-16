@@ -1,8 +1,12 @@
 package ar.edu.davinci.excusas.controller;
 
 import ar.edu.davinci.excusas.dto.ExcusaDTO;
+import ar.edu.davinci.excusas.model.excusas.MotivoExcusa;
 import ar.edu.davinci.excusas.service.ExcusaService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -16,10 +20,10 @@ import java.util.List;
 @RequestMapping("/excusas")
 @CrossOrigin(origins = "*")
 public class ExcusaController {
-    
+
     @Autowired
     private ExcusaService excusaService;
-    
+
     @GetMapping
     public ResponseEntity<List<ExcusaDTO>> obtenerTodasLasExcusas() {
         try {
@@ -29,7 +33,7 @@ public class ExcusaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @GetMapping("/{legajo}")
     public ResponseEntity<List<ExcusaDTO>> obtenerExcusasPorEmpleado(@PathVariable Integer legajo) {
         try {
@@ -39,7 +43,7 @@ public class ExcusaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @GetMapping("/rechazadas")
     public ResponseEntity<List<ExcusaDTO>> obtenerExcusasRechazadas() {
         try {
@@ -49,7 +53,7 @@ public class ExcusaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @GetMapping("/busqueda")
     public ResponseEntity<List<ExcusaDTO>> buscarExcusas(
             @RequestParam(required = false) Integer legajo,
@@ -62,7 +66,7 @@ public class ExcusaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @PostMapping
     public ResponseEntity<ExcusaDTO> registrarExcusa(@Valid @RequestBody RegistrarExcusaRequest request) {
         try {
@@ -74,7 +78,7 @@ public class ExcusaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @DeleteMapping("/eliminar")
     public ResponseEntity<EliminarExcusasResponse> eliminarExcusasAnterioresA(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaLimite) {
@@ -82,7 +86,7 @@ public class ExcusaController {
             if (fechaLimite == null) {
                 return ResponseEntity.badRequest().build();
             }
-            
+
             int excusasEliminadas = excusaService.eliminarExcusasAnterioresA(fechaLimite);
             EliminarExcusasResponse response = new EliminarExcusasResponse(excusasEliminadas);
             return ResponseEntity.ok(response);
@@ -92,26 +96,30 @@ public class ExcusaController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
+    // Clases internas simplificadas con validaciones
     public static class RegistrarExcusaRequest {
+        @NotNull(message = "El legajo del empleado no puede ser nulo")
+        @Positive(message = "El legajo debe ser un número positivo")
         private Integer legajoEmpleado;
-        private String motivo;
-        
-        // Getters y Setters
+
+        @NotNull(message = "El motivo no puede ser nulo")
+        private MotivoExcusa motivo;
+
         public Integer getLegajoEmpleado() { return legajoEmpleado; }
         public void setLegajoEmpleado(Integer legajoEmpleado) { this.legajoEmpleado = legajoEmpleado; }
-        
-        public String getMotivo() { return motivo; }
-        public void setMotivo(String motivo) { this.motivo = motivo; }
+
+        public MotivoExcusa getMotivo() { return motivo; }
+        public void setMotivo(MotivoExcusa motivo) { this.motivo = motivo; }
     }
-    
+
     public static class EliminarExcusasResponse {
         private int excusasEliminadas;
-        
+
         public EliminarExcusasResponse(int excusasEliminadas) {
             this.excusasEliminadas = excusasEliminadas;
         }
-        
+
         public int getExcusasEliminadas() { return excusasEliminadas; }
         public void setExcusasEliminadas(int excusasEliminadas) { this.excusasEliminadas = excusasEliminadas; }
     }

@@ -10,25 +10,24 @@ import jakarta.validation.constraints.Positive;
 public class EncargadoEntity {
     
     @Id
-    @Positive(message = "El legajo debe ser un número positivo")
-    @Column(name = "legajo", unique = true, nullable = false)
+    @Positive
     private Integer legajo;
     
-    @NotBlank(message = "El nombre no puede estar vacío")
-    @Column(name = "nombre", nullable = false)
+    @NotBlank
+    @Column(nullable = false)
     private String nombre;
     
-    @NotBlank(message = "El email no puede estar vacío")
-    @Email(message = "El email debe tener un formato válido")
-    @Column(name = "email", nullable = false, unique = true)
+    @NotBlank
+    @Email
+    @Column(nullable = false, unique = true)
     private String email;
     
-    @NotBlank(message = "El tipo de encargado no puede estar vacío")
-    @Column(name = "tipo_encargado", nullable = false)
+    @NotBlank
+    @Column(nullable = false)
     private String tipoEncargado;
     
-    @NotBlank(message = "El modo no puede estar vacío")
-    @Column(name = "modo", nullable = false)
+    @NotBlank
+    @Column(nullable = false)
     private String modo;
     
     public EncargadoEntity() {}
@@ -41,7 +40,6 @@ public class EncargadoEntity {
         this.modo = modo;
     }
     
-    // Getters y Setters
     public Integer getLegajo() { return legajo; }
     public void setLegajo(Integer legajo) { this.legajo = legajo; }
     
@@ -56,15 +54,4 @@ public class EncargadoEntity {
     
     public String getModo() { return modo; }
     public void setModo(String modo) { this.modo = modo; }
-    
-    @Override
-    public String toString() {
-        return "EncargadoEntity{" +
-                "legajo=" + legajo +
-                ", nombre='" + nombre + '\'' +
-                ", email='" + email + '\'' +
-                ", tipoEncargado='" + tipoEncargado + '\'' +
-                ", modo='" + modo + '\'' +
-                '}';
-    }
 }

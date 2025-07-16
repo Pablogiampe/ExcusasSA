@@ -15,71 +15,116 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class EmpleadoService {
-    
+
     @Autowired
     private EmpleadoRepository empleadoRepository;
-    
+
     @Autowired
     private EmpleadoMapper empleadoMapper;
-    
+
     public List<EmpleadoDTO> obtenerTodosLosEmpleados() {
-        return empleadoRepository.findAll()
-                .stream()
+        List<EmpleadoEntity> empleados = empleadoRepository.findAll();
+        return empleados.stream()
                 .map(empleadoMapper::toDTO)
                 .collect(Collectors.toList());
     }
-    
+
     public Optional<EmpleadoDTO> obtenerEmpleadoPorLegajo(Integer legajo) {
-        return empleadoRepository.findByLegajo(legajo)
-                .map(empleadoMapper::toDTO);
+        if (legajo == null || legajo <= 0) {
+            throw new IllegalArgumentException("El legajo debe ser un número positivo");
+        }
+
+        Optional<EmpleadoEntity> empleado = empleadoRepository.findByLegajo(legajo);
+        return empleado.map(empleadoMapper::toDTO);
     }
-    
+
     public EmpleadoDTO crearEmpleado(EmpleadoDTO empleadoDTO) {
-        if (empleadoRepository.existsByLegajo(empleadoDTO.getLegajo())) {
+        if (empleadoDTO == null) {
+            throw new IllegalArgumentException("Los datos del empleado no pueden ser nulos");
+        }
+
+        if (empleadoDTO.getLegajo() == null || empleadoDTO.getLegajo() <= 0) {
+            throw new IllegalArgumentException("El legajo debe ser un número positivo");
+        }
+
+        if (empleadoDTO.getNombre() == null || empleadoDTO.getNombre().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío");
+        }
+
+        if (empleadoDTO.getEmail() == null || empleadoDTO.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("El email no puede estar vacío");
+        }
+
+        if (empleadoRepository.findByLegajo(empleadoDTO.getLegajo()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un empleado con el legajo: " + empleadoDTO.getLegajo());
         }
-        
-        if (empleadoRepository.existsByEmail(empleadoDTO.getEmail())) {
+
+        if (empleadoRepository.findByEmail(empleadoDTO.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Ya existe un empleado con el email: " + empleadoDTO.getEmail());
         }
-        
-        EmpleadoEntity entity = empleadoMapper.toEntity(empleadoDTO);
-        EmpleadoEntity savedEntity = empleadoRepository.save(entity);
-        return empleadoMapper.toDTO(savedEntity);
+
+        EmpleadoEntity empleadoEntity = empleadoMapper.toEntity(empleadoDTO);
+        EmpleadoEntity empleadoGuardado = empleadoRepository.save(empleadoEntity);
+        return empleadoMapper.toDTO(empleadoGuardado);
     }
-    
+
     public EmpleadoDTO actualizarEmpleado(Integer legajo, EmpleadoDTO empleadoDTO) {
-        EmpleadoEntity existingEntity = empleadoRepository.findByLegajo(legajo)
-                .orElseThrow(() -> new IllegalArgumentException("No se encontró empleado con legajo: " + legajo));
-        
-        // Verificar si el email ya existe en otro empleado
-        if (!existingEntity.getEmail().equals(empleadoDTO.getEmail()) && 
-            empleadoRepository.existsByEmail(empleadoDTO.getEmail())) {
-            throw new IllegalArgumentException("Ya existe un empleado con el email: " + empleadoDTO.getEmail());
+        if (legajo == null || legajo <= 0) {
+            throw new IllegalArgumentException("El legajo debe ser un número positivo");
         }
-        
-        existingEntity.setNombre(empleadoDTO.getNombre());
-        existingEntity.setEmail(empleadoDTO.getEmail());
-        
-        EmpleadoEntity updatedEntity = empleadoRepository.save(existingEntity);
-        return empleadoMapper.toDTO(updatedEntity);
+
+        if (empleadoDTO == null) {
+            throw new IllegalArgumentException("Los datos del empleado no pueden ser nulos");
+        }
+
+        Optional<EmpleadoEntity> empleadoExistente = empleadoRepository.findByLegajo(legajo);
+        if (empleadoExistente.isEmpty()) {
+            throw new IllegalArgumentException("No se encontró un empleado con el legajo: " + legajo);
+        }
+
+        // Validaciones adicionales
+        if (empleadoDTO.getNombre() == null || empleadoDTO.getNombre().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre no puede estar vacío");
+        }
+
+        if (empleadoDTO.getEmail() == null || empleadoDTO.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("El email no puede estar vacío");
+        }
+
+        Optional<EmpleadoEntity> empleadoConMismoEmail = empleadoRepository.findByEmail(empleadoDTO.getEmail());
+        if (empleadoConMismoEmail.isPresent() && !empleadoConMismoEmail.get().getLegajo().equals(legajo)) {
+            throw new IllegalArgumentException("Ya existe otro empleado con el email: " + empleadoDTO.getEmail());
+        }
+
+        EmpleadoEntity empleado = empleadoExistente.get();
+        empleado.setNombre(empleadoDTO.getNombre());
+        empleado.setEmail(empleadoDTO.getEmail());
+
+        EmpleadoEntity empleadoActualizado = empleadoRepository.save(empleado);
+        return empleadoMapper.toDTO(empleadoActualizado);
     }
-    
+
     public void eliminarEmpleado(Integer legajo) {
-        if (!empleadoRepository.existsByLegajo(legajo)) {
-            throw new IllegalArgumentException("No se encontró empleado con legajo: " + legajo);
+        if (legajo == null || legajo <= 0) {
+            throw new IllegalArgumentException("El legajo debe ser un número positivo");
         }
-        empleadoRepository.deleteById(legajo);
+
+        Optional<EmpleadoEntity> empleado = empleadoRepository.findByLegajo(legajo);
+        if (empleado.isEmpty()) {
+            throw new IllegalArgumentException("No se encontró un empleado con el legajo: " + legajo);
+        }
+
+        empleadoRepository.delete(empleado.get());
     }
-    
+
     public List<EmpleadoDTO> buscarEmpleadosPorNombre(String nombre) {
-        return empleadoRepository.findByNombreContaining(nombre)
-                .stream()
+        if (nombre == null || nombre.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre de búsqueda no puede estar vacío");
+        }
+
+        List<EmpleadoEntity> empleados = empleadoRepository.findByNombreContaining(nombre.trim());
+        return empleados.stream()
                 .map(empleadoMapper::toDTO)
                 .collect(Collectors.toList());
-    }
-    
-    public boolean existeEmpleado(Integer legajo) {
-        return empleadoRepository.existsByLegajo(legajo);
     }
 }

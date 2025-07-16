@@ -22,106 +22,96 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class EmpleadoServiceTest {
-    
+
     @Mock
     private EmpleadoRepository empleadoRepository;
-    
+
     @Mock
     private EmpleadoMapper empleadoMapper;
-    
+
     @InjectMocks
     private EmpleadoService empleadoService;
-    
+
     private EmpleadoEntity empleadoEntity;
     private EmpleadoDTO empleadoDTO;
-    
+
     @BeforeEach
     void setUp() {
         empleadoEntity = new EmpleadoEntity("Juan Pérez", "juan@test.com", 1001);
         empleadoDTO = new EmpleadoDTO(1001, "Juan Pérez", "juan@test.com");
     }
-    
+
     @Test
     void testObtenerTodosLosEmpleados() {
-        // Given
         List<EmpleadoEntity> entities = Arrays.asList(empleadoEntity);
-        List<EmpleadoDTO> expectedDTOs = Arrays.asList(empleadoDTO);
-        
+
         when(empleadoRepository.findAll()).thenReturn(entities);
         when(empleadoMapper.toDTO(empleadoEntity)).thenReturn(empleadoDTO);
-        
-        // When
+
         List<EmpleadoDTO> result = empleadoService.obtenerTodosLosEmpleados();
-        
-        // Then
+
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getNombre()).isEqualTo("Juan Pérez");
         verify(empleadoRepository).findAll();
         verify(empleadoMapper).toDTO(empleadoEntity);
     }
-    
+
     @Test
     void testObtenerEmpleadoPorLegajo() {
-        // Given
         when(empleadoRepository.findByLegajo(1001)).thenReturn(Optional.of(empleadoEntity));
         when(empleadoMapper.toDTO(empleadoEntity)).thenReturn(empleadoDTO);
-        
-        // When
+
         Optional<EmpleadoDTO> result = empleadoService.obtenerEmpleadoPorLegajo(1001);
-        
-        // Then
+
         assertThat(result).isPresent();
         assertThat(result.get().getNombre()).isEqualTo("Juan Pérez");
         verify(empleadoRepository).findByLegajo(1001);
         verify(empleadoMapper).toDTO(empleadoEntity);
     }
-    
+
     @Test
     void testCrearEmpleado() {
-        // Given
-        when(empleadoRepository.existsByLegajo(1001)).thenReturn(false);
-        when(empleadoRepository.existsByEmail("juan@test.com")).thenReturn(false);
+        // Mock para verificar que no existe empleado con el legajo
+        when(empleadoRepository.findByLegajo(1001)).thenReturn(Optional.empty());
+        // Mock para verificar que no existe empleado con el email
+        when(empleadoRepository.findByEmail("juan@test.com")).thenReturn(Optional.empty());
         when(empleadoMapper.toEntity(empleadoDTO)).thenReturn(empleadoEntity);
         when(empleadoRepository.save(empleadoEntity)).thenReturn(empleadoEntity);
         when(empleadoMapper.toDTO(empleadoEntity)).thenReturn(empleadoDTO);
-        
-        // When
+
         EmpleadoDTO result = empleadoService.crearEmpleado(empleadoDTO);
-        
-        // Then
+
         assertThat(result.getNombre()).isEqualTo("Juan Pérez");
-        verify(empleadoRepository).existsByLegajo(1001);
-        verify(empleadoRepository).existsByEmail("juan@test.com");
+        verify(empleadoRepository).findByLegajo(1001);
+        verify(empleadoRepository).findByEmail("juan@test.com");
         verify(empleadoRepository).save(empleadoEntity);
     }
-    
+
     @Test
     void testCrearEmpleadoConLegajoExistente() {
-        // Given
-        when(empleadoRepository.existsByLegajo(1001)).thenReturn(true);
-        
-        // When & Then
+        // Mock para simular que ya existe un empleado con el legajo
+        when(empleadoRepository.findByLegajo(1001)).thenReturn(Optional.of(empleadoEntity));
+
         assertThatThrownBy(() -> empleadoService.crearEmpleado(empleadoDTO))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Ya existe un empleado con el legajo: 1001");
-        
-        verify(empleadoRepository).existsByLegajo(1001);
+
+        verify(empleadoRepository).findByLegajo(1001);
         verify(empleadoRepository, never()).save(any());
     }
-    
+
     @Test
     void testCrearEmpleadoConEmailExistente() {
-        // Given
-        when(empleadoRepository.existsByLegajo(1001)).thenReturn(false);
-        when(empleadoRepository.existsByEmail("juan@test.com")).thenReturn(true);
-        
-        // When & Then
+        // Mock para simular que no existe empleado con el legajo pero sí con el email
+        when(empleadoRepository.findByLegajo(1001)).thenReturn(Optional.empty());
+        when(empleadoRepository.findByEmail("juan@test.com")).thenReturn(Optional.of(empleadoEntity));
+
         assertThatThrownBy(() -> empleadoService.crearEmpleado(empleadoDTO))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Ya existe un empleado con el email: juan@test.com");
-        
-        verify(empleadoRepository).existsByLegajo(1001);
-        verify(empleadoRepository).existsByEmail("juan@test.com");
+
+        verify(empleadoRepository).findByLegajo(1001);
+        verify(empleadoRepository).findByEmail("juan@test.com");
         verify(empleadoRepository, never()).save(any());
     }
 }

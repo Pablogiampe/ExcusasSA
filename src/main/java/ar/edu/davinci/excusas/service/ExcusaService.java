@@ -76,33 +76,27 @@ public class ExcusaService {
         }
     }
     
-    public ExcusaDTO registrarExcusa(Integer legajoEmpleado, String motivoString) {
-        // Validar que el empleado existe
+    public ExcusaDTO registrarExcusa(Integer legajoEmpleado, MotivoExcusa motivo1) {
         EmpleadoEntity empleado = empleadoRepository.findByLegajo(legajoEmpleado)
                 .orElseThrow(() -> new IllegalArgumentException("No se encontró empleado con legajo: " + legajoEmpleado));
         
-        // Convertir string a enum
         MotivoExcusa motivo;
         try {
-            motivo = MotivoExcusa.valueOf(motivoString.toUpperCase());
+            motivo = motivo1;
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Motivo de excusa no válido: " + motivoString);
+            throw new IllegalArgumentException("Motivo de excusa no válido: " + motivo1);
         }
         
-        // Crear la excusa
         ExcusaEntity excusa = new ExcusaEntity();
         excusa.setMotivo(motivo);
         excusa.setTipoExcusa(determinarTipoExcusa(motivo));
         excusa.setEmpleado(empleado);
         excusa.setFechaCreacion(LocalDateTime.now());
         
-        // Procesar la excusa a través de la línea de encargados
         procesarExcusaConEncargados(excusa);
         
-        // Guardar la excusa
         ExcusaEntity excusaGuardada = excusaRepository.save(excusa);
         
-        // Si fue rechazada por el CEO, crear prontuario
         if (Boolean.FALSE.equals(excusa.getAceptada()) && "Miguel CEO".equals(excusa.getEncargadoQueManejo())) {
             ProntuarioEntity prontuario = new ProntuarioEntity(empleado, excusaGuardada);
             prontuarioRepository.save(prontuario);
@@ -115,7 +109,6 @@ public class ExcusaService {
         switch (motivo) {
             case QUEDARSE_DORMIDO:
             case PERDI_TRANSPORTE:
-            case OLVIDE_ALGO:
                 return "ExcusaTrivial";
             case CUIDADO_FAMILIAR:
                 return "ExcusaCuidadoFamiliar";
@@ -123,7 +116,7 @@ public class ExcusaService {
                 return "ExcusaPerdidaSuministro";
             case INCREIBLE_INVEROSIMIL:
                 return "ExcusaInverosimil";
-            case COMPLEJA_ELABORADA:
+            case IRRELEVANTE:
                 return "ExcusaCompleja";
             default:
                 return "ExcusaGenerica";
@@ -131,7 +124,6 @@ public class ExcusaService {
     }
     
     private void procesarExcusaConEncargados(ExcusaEntity excusa) {
-        // Simulación simplificada del procesamiento por encargados
         String tipoExcusa = excusa.getTipoExcusa();
         
         if ("ExcusaTrivial".equals(tipoExcusa)) {
@@ -141,14 +133,13 @@ public class ExcusaService {
             excusa.setAceptada(true);
             excusa.setEncargadoQueManejo("Laura Gerente");
         } else {
-            // Excusas complejas o inverosímiles van al CEO
             excusa.setAceptada(false);
             excusa.setEncargadoQueManejo("Miguel CEO");
         }
     }
     
     public int eliminarExcusasAnterioresA(LocalDateTime fechaLimite) {
-        if (fechaLimite == null) {
+        if (fechaLimite == null || fechaLimite.isAfter(LocalDateTime.now()) || fechaLimite.isEqual(LocalDateTime.now())) {
             throw new IllegalArgumentException("La fecha límite no puede ser nula");
         }
         
